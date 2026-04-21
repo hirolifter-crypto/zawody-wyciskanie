@@ -7,11 +7,10 @@
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 .container { display:flex; flex-wrap:wrap; justify-content:center; }
-.group { border:1px solid #444; margin:10px; padding:10px; width:300px; }
-input { margin:2px; padding:5px; }
+.group { border:1px solid #444; margin:10px; padding:10px; width:320px; }
+input { margin:2px; padding:5px; width:80px; }
 button { margin:5px; padding:12px; font-size:16px; }
 h2 { color:yellow; }
-.big { font-size:22px; color:#0f0; }
 </style>
 </head>
 
@@ -26,22 +25,20 @@ h2 { color:yellow; }
 <h2>Pomost</h2>
 <div id="platform"></div>
 
-<div class="big" id="info"></div>
-
 <button onclick="nextMove()">➡️ Następny ruch</button>
 
 <script>
+
 let groups = [10,10,10,12];
 let lifters = [];
 
 let currentGroup = 0;
 let currentIndex = 0;
-let currentRound = 1;
+let currentRound = 0;
 
 function init() {
   let container = document.getElementById("groups");
   container.innerHTML = "";
-  lifters = [];
 
   let id = 0;
 
@@ -54,13 +51,14 @@ function init() {
       lifters.push({
         group: g,
         name: "",
-        category: "",
         attempts: ["","",""]
       });
 
       div.innerHTML += `
         <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value">
-        <input placeholder="Kat." onchange="lifters[${id}].category=this.value">
+        <input placeholder="1" onchange="lifters[${id}].attempts[0]=this.value">
+        <input placeholder="2" onchange="lifters[${id}].attempts[1]=this.value">
+        <input placeholder="3" onchange="lifters[${id}].attempts[2]=this.value">
         <br>
       `;
       id++;
@@ -72,75 +70,62 @@ function init() {
   renderPlatform();
 }
 
-// 🔥 SORTOWANIE IPF
-function sortByWeight(groupLifters, attempt) {
-  return groupLifters
-    .filter(l => l.attempts[attempt] !== "")
-    .sort((a, b) => parseFloat(a.attempts[attempt]) - parseFloat(b.attempts[attempt]));
-}
-
-// 🔥 KOLEJKA
-function getGroupLiftersSorted() {
-  let attempt = currentRound - 1;
+// 🔥 KOLEJKA IPF
+function getQueue() {
   let groupLifters = lifters.filter(l => l.group === currentGroup);
-  return sortByWeight(groupLifters, attempt);
+
+  return groupLifters
+    .filter(l => l.attempts[currentRound] !== "")
+    .sort((a,b) => parseFloat(a.attempts[currentRound]) - parseFloat(b.attempts[currentRound]));
 }
 
 function renderPlatform() {
-  let attempt = currentRound - 1;
-  let groupLifters = getGroupLiftersSorted();
 
-  if (groupLifters.length === 0) {
+  let queue = getQueue();
+
+  if (queue.length === 0) {
     document.getElementById("platform").innerHTML =
-      "<h2>Wpisz ciężary żeby utworzyć kolejkę</h2>";
+      "<h2>Wpisz ciężary w grupie</h2>";
     return;
   }
 
-  if (currentIndex >= groupLifters.length) currentIndex = 0;
+  if (currentIndex >= queue.length) currentIndex = 0;
 
-  let l = groupLifters[currentIndex];
+  let l = queue[currentIndex];
 
   document.getElementById("platform").innerHTML = `
-    <h3>${l.name || "BRAK"} (${l.category || "-"})</h3>
-    <h2>Grupa ${currentGroup+1} / Runda ${currentRound} / Próba ${attempt+1}</h2>
-
-    <br>
-
-    1: <input value="${l.attempts[0]}" onchange="setAttempt(l,0,this.value)">
-    2: <input value="${l.attempts[1]}" onchange="setAttempt(l,1,this.value)">
-    3: <input value="${l.attempts[2]}" onchange="setAttempt(l,2,this.value)">
+    <h2>${l.name}</h2>
+    <h2>Grupa ${currentGroup+1} / Próba ${currentRound+1}</h2>
+    <h1>${l.attempts[currentRound]} kg</h1>
   `;
 
-  document.getElementById("info").innerText =
-    "Kolejka: " + (currentIndex+1) + " / " + groupLifters.length;
-
-  sync(l, attempt);
-}
-
-function setAttempt(lifter, n, val) {
-  lifter.attempts[n] = val;
-  renderPlatform();
+  localStorage.setItem("live", JSON.stringify({
+    name: l.name,
+    attempts: l.attempts,
+    attemptNumber: currentRound
+  }));
 }
 
 function nextMove() {
 
-  let groupLifters = getGroupLiftersSorted();
+  let queue = getQueue();
 
-  if (groupLifters.length === 0) return;
+  if (queue.length === 0) return;
 
-  if (currentIndex < groupLifters.length - 1) {
+  if (currentIndex < queue.length - 1) {
     currentIndex++;
   } else {
 
-    // koniec rundy
-    if (currentRound < 3) {
+    // kolejna próba
+    if (currentRound < 2) {
       currentRound++;
       currentIndex = 0;
     } else {
-      // koniec grupy
+
+      // następna grupa
       if (currentGroup < groups.length - 1) {
         currentGroup++;
-        currentRound = 1;
+        currentRound = 0;
         currentIndex = 0;
       } else {
         document.getElementById("platform").innerHTML =
@@ -153,19 +138,12 @@ function nextMove() {
   renderPlatform();
 }
 
-function sync(l, attempt) {
-  localStorage.setItem("live", JSON.stringify({
-    name: l.name,
-    attempts: l.attempts,
-    attemptNumber: attempt
-  }));
-}
-
 function openTV() {
   window.open("tv.html", "_blank");
 }
 
 init();
+
 </script>
 
 </body>
