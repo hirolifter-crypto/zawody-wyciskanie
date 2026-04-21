@@ -72,10 +72,11 @@ function renderPlatform() {
     <h3>${l.name || "BRAK"} (${l.category || "-"})</h3>
 
     <label>Próba:</label>
-    <select onchange="setAttemptNumber(this.value)">
-      <option value="0">1</option>
-      <option value="1">2</option>
-      <option value="2">3</option>
+  <select onchange="setAttemptNumber(this.value)">
+  <option value="0" ${currentAttempt==0 ? "selected" : ""}>1</option>
+  <option value="1" ${currentAttempt==1 ? "selected" : ""}>2</option>
+  <option value="2" ${currentAttempt==2 ? "selected" : ""}>3</option>
+</select>
     </select>
 <br><br>
 <button onclick="nextAttempt()">➡️ Następna próba</button>
@@ -104,7 +105,9 @@ function prevLifter() {
 }
 function setAttempt(n, val) {
   lifters[currentIndex].attempts[n] = val;
-  function nextAttempt() {
+  sync();
+}
+ function nextAttempt() {
   if (currentAttempt < 2) {
     currentAttempt++;
     renderPlatform();
