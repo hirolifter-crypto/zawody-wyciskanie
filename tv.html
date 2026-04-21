@@ -17,6 +17,11 @@ body {
   color:yellow;
 }
 
+#club {
+  font-size:40px;
+  color:lightgray;
+}
+
 #weight {
   font-size:120px;
   color:red;
@@ -35,7 +40,9 @@ body {
 <h1>NA POMOŚCIE</h1>
 
 <div id="current">---</div>
+<div id="club"></div>
 <div id="weight">---</div>
+
 <div id="next"></div>
 
 <script>
@@ -46,6 +53,7 @@ function update() {
     if (!data) return;
 
     document.getElementById("current").innerText = data.name || "---";
+    document.getElementById("club").innerText = data.club || "";
     document.getElementById("weight").innerText =
       (data.weight ? data.weight : "---") + " kg";
 
@@ -59,7 +67,6 @@ function update() {
   } catch(e) {}
 }
 
-// 🔥 pewne odświeżanie
 setInterval(update, 200);
 update();
 
