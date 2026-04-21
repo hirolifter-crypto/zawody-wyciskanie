@@ -9,10 +9,10 @@ body {background:black;color:white;text-align:center;font-family:Arial;margin:0;
 .container{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;}
 
 #current{font-size:10vh;color:yellow;}
-#club{font-size:4vh;color:lightgray;}
+#club{font-size:4vh;}
 #weight{font-size:14vh;color:red;}
 #timer{font-size:10vh;color:cyan;}
-#next{font-size:4vh;color:lightgray;margin-top:4vh;}
+#next{font-size:4vh;margin-top:4vh;}
 </style>
 </head>
 
@@ -41,15 +41,11 @@ function update(){
   document.getElementById("club").innerText=data.club||"";
   document.getElementById("weight").innerText=(data.weight||"")+" kg";
 
-  let t=tData?tData.value:"";
+  let t=tData ? tData.value : "";
   document.getElementById("timer").innerText="CZAS: "+t+"s";
 
-  if(data.nextName){
-    document.getElementById("next").innerText=
-      "W KOLEJCE: "+data.nextName+" ("+data.nextWeight+" kg)";
-  } else {
-    document.getElementById("next").innerText="";
-  }
+  document.getElementById("next").innerText =
+    data.nextName ? "W KOLEJCE: "+data.nextName+" ("+data.nextWeight+" kg)" : "";
 }
 
 setInterval(update,200);
