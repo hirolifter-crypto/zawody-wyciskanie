@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Zawody – Wyciskanie Leżąc</title>
+
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 h1 { color:#0f0; }
@@ -11,17 +12,26 @@ h1 { color:#0f0; }
 .group { border:1px solid #444; margin:10px; padding:10px; width:300px; }
 
 input { margin:2px; padding:5px; }
-button { margin:5px; padding:8px; font-size:14px; }
+button { margin:5px; padding:10px; font-size:14px; }
 
-.active { background:#0a0; }
+.tv {
+  font-size: 60px;
+  color: yellow;
+}
+
+.big {
+  font-size: 100px;
+  color: red;
+}
 </style>
 </head>
+
 <body>
 
-<h1>ZAWODY – WYCISKANIE LEŻĄC</h1>
+<h1>ZAWODY – PANEL SĘDZIOWSKI</h1>
 
+<button onclick="openTV()">📺 Otwórz ekran TV</button>
 <button onclick="saveData()">💾 Zapisz</button>
-<button onclick="loadData()">📂 Wczytaj</button>
 
 <div class="container" id="groups"></div>
 
@@ -36,17 +46,16 @@ let groups = [10,10,10,12];
 let lifters = [];
 let currentIndex = 0;
 
-// generowanie grup
 function init() {
   let container = document.getElementById("groups");
   container.innerHTML = "";
+  lifters = [];
 
   let id = 0;
 
   groups.forEach((size, g) => {
     let div = document.createElement("div");
     div.className = "group";
-
     div.innerHTML = "<h3>Grupa " + (g+1) + "</h3>";
 
     for (let i=0;i<size;i++) {
@@ -71,14 +80,9 @@ function init() {
   renderPlatform();
 }
 
-function updateName(id, val) {
-  lifters[id].name = val;
-}
-function updateCat(id, val) {
-  lifters[id].weightClass = val;
-}
+function updateName(id, val) { lifters[id].name = val; sync(); }
+function updateCat(id, val) { lifters[id].weightClass = val; sync(); }
 
-// pomost
 function renderPlatform() {
   let l = lifters[currentIndex];
   document.getElementById("platform").innerHTML = `
@@ -90,10 +94,12 @@ function renderPlatform() {
     </div>
     <p>Zawodnik ${currentIndex+1} / ${lifters.length}</p>
   `;
+  sync();
 }
 
 function setAttempt(n, val) {
   lifters[currentIndex].attempts[n] = val;
+  sync();
 }
 
 function nextLifter() {
@@ -110,19 +116,42 @@ function prevLifter() {
   }
 }
 
-// zapis
 function saveData() {
   localStorage.setItem("zawody", JSON.stringify(lifters));
   alert("Zapisano!");
 }
 
-function loadData() {
-  let data = localStorage.getItem("zawody");
-  if (data) {
-    lifters = JSON.parse(data);
-    renderPlatform();
-    alert("Wczytano!");
-  }
+function sync() {
+  localStorage.setItem("live", JSON.stringify({
+    lifter: lifters[currentIndex],
+    index: currentIndex
+  }));
+}
+
+// 📺 EKRAN TV
+function openTV() {
+  let win = window.open("", "_blank");
+
+  win.document.write(`
+    <html>
+    <body style="background:black; color:white; text-align:center;">
+      <h1>NA POMOŚCIE</h1>
+      <div id="name" class="tv"></div>
+      <div id="weight" class="big"></div>
+
+      <script>
+        function update() {
+          let data = JSON.parse(localStorage.getItem("live"));
+          if (data) {
+            document.getElementById("name").innerText = data.lifter.name;
+            document.getElementById("weight").innerText = data.lifter.attempts[0] + " kg";
+          }
+        }
+        setInterval(update, 500);
+      <\/script>
+    </body>
+    </html>
+  `);
 }
 
 init();
