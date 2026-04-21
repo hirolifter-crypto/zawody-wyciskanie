@@ -52,8 +52,8 @@ function init() {
       });
 
       div.innerHTML += `
-        <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value">
-        <input placeholder="Kat." onchange="lifters[${id}].category=this.value">
+        <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value; sync()">
+       <input placeholder="Kat." onchange="lifters[${id}].category=this.value; sync()">
         <br>
       `;
       id++;
@@ -101,8 +101,8 @@ function prevLifter() {
     renderPlatform();
   }
 }
-function setAttemptNumber(val) {
-  currentAttempt = parseInt(val);
+function setAttempt(n, val) {
+  lifters[currentIndex].attempts[n] = val;
   sync();
 }
 function sync() {
