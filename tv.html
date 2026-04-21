@@ -2,77 +2,57 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>EKRAN TV</title>
+<title>TV</title>
 
 <style>
-body {
-  background:black;
-  color:white;
-  text-align:center;
-  font-family:Arial;
-  margin:0;
-}
+body {background:black;color:white;text-align:center;font-family:Arial;margin:0;}
+.container{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;}
 
-.container {
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-
-h1 { font-size:5vh; }
-
-#current { font-size:10vh; color:yellow; }
-#club { font-size:4vh; color:lightgray; }
-#weight { font-size:14vh; color:red; }
-#timer { font-size:10vh; color:cyan; }
-#next { margin-top:4vh; font-size:4vh; color:lightgray; }
+#current{font-size:10vh;color:yellow;}
+#club{font-size:4vh;color:lightgray;}
+#weight{font-size:14vh;color:red;}
+#timer{font-size:10vh;color:cyan;}
+#next{font-size:4vh;color:lightgray;margin-top:4vh;}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
 <h1>NA POMOŚCIE</h1>
 
-<div id="current">---</div>
+<div id="current"></div>
 <div id="club"></div>
-<div id="weight">---</div>
+<div id="weight"></div>
 <div id="timer"></div>
-
 <div id="next"></div>
-
 </div>
 
 <script>
 
-function update() {
-  let data = JSON.parse(localStorage.getItem("live"));
-  let tData = JSON.parse(localStorage.getItem("timer"));
+function update(){
 
-  if (!data) return;
+  let data=JSON.parse(localStorage.getItem("live"));
+  let tData=JSON.parse(localStorage.getItem("timer"));
 
-  document.getElementById("current").innerText = data.name || "---";
-  document.getElementById("club").innerText = data.club || "";
-  document.getElementById("weight").innerText =
-    (data.weight || "---") + " kg";
+  if(!data) return;
 
-  let t = tData ? tData.value : null;
+  document.getElementById("current").innerText=data.name||"";
+  document.getElementById("club").innerText=data.club||"";
+  document.getElementById("weight").innerText=(data.weight||"")+" kg";
 
-  document.getElementById("timer").innerText =
-    t !== null ? "CZAS: " + t + "s" : "";
+  let t=tData?tData.value:"";
+  document.getElementById("timer").innerText="CZAS: "+t+"s";
 
-  if (data.nextName) {
-    document.getElementById("next").innerText =
-      "W KOLEJCE: " + data.nextName + " (" + data.nextWeight + " kg)";
+  if(data.nextName){
+    document.getElementById("next").innerText=
+      "W KOLEJCE: "+data.nextName+" ("+data.nextWeight+" kg)";
   } else {
-    document.getElementById("next").innerText = "";
+    document.getElementById("next").innerText="";
   }
 }
 
-setInterval(update, 200);
+setInterval(update,200);
 update();
 
 </script>
