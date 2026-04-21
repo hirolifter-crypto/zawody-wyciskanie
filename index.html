@@ -55,10 +55,10 @@ function init() {
       });
 
       div.innerHTML += `
-        <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value">
-        <input placeholder="1" onchange="lifters[${id}].attempts[0]=this.value">
-        <input placeholder="2" onchange="lifters[${id}].attempts[1]=this.value">
-        <input placeholder="3" onchange="lifters[${id}].attempts[2]=this.value">
+        <input placeholder="Nazwisko" onchange="updateName(${id}, this.value)">
+        <input placeholder="1" onchange="updateAttempt(${id},0,this.value)">
+        <input placeholder="2" onchange="updateAttempt(${id},1,this.value)">
+        <input placeholder="3" onchange="updateAttempt(${id},2,this.value)">
         <br>
       `;
       id++;
@@ -70,7 +70,14 @@ function init() {
   renderPlatform();
 }
 
-// 🔥 KOLEJKA IPF
+function updateName(id, val) {
+  lifters[id].name = val.trim();
+}
+
+function updateAttempt(id, n, val) {
+  lifters[id].attempts[n] = val.trim();
+}
+
 function getQueue() {
   let groupLifters = lifters.filter(l => l.group === currentGroup);
 
@@ -100,12 +107,14 @@ function renderPlatform() {
     <h1>${l.attempts[currentRound]} kg</h1>
   `;
 
+  // 🔥 KLUCZOWA SYNCHRONIZACJA
   localStorage.setItem("live", JSON.stringify({
     name: l.name,
     weight: l.attempts[currentRound],
     nextName: next ? next.name : "",
     nextWeight: next ? next.attempts[currentRound] : "",
-    attemptNumber: currentRound
+    attemptNumber: currentRound,
+    time: Date.now()
   }));
 }
 
