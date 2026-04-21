@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody</title>
+<title>Zawody IPF</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
@@ -17,7 +17,7 @@ h2 { color:yellow; }
 
 <body>
 
-<h1>PANEL SĘDZIOWSKI</h1>
+<h1>PANEL SĘDZIOWSKI – IPF</h1>
 
 <button onclick="openTV()">📺 Ekran TV</button>
 
@@ -72,14 +72,33 @@ function init() {
   renderPlatform();
 }
 
-function getGroupLifters() {
-  return lifters.filter(l => l.group === currentGroup);
+// 🔥 SORTOWANIE IPF
+function sortByWeight(groupLifters, attempt) {
+  return groupLifters
+    .filter(l => l.attempts[attempt] !== "")
+    .sort((a, b) => parseFloat(a.attempts[attempt]) - parseFloat(b.attempts[attempt]));
+}
+
+// 🔥 KOLEJKA
+function getGroupLiftersSorted() {
+  let attempt = currentRound - 1;
+  let groupLifters = lifters.filter(l => l.group === currentGroup);
+  return sortByWeight(groupLifters, attempt);
 }
 
 function renderPlatform() {
-  let groupLifters = getGroupLifters();
-  let l = groupLifters[currentIndex];
   let attempt = currentRound - 1;
+  let groupLifters = getGroupLiftersSorted();
+
+  if (groupLifters.length === 0) {
+    document.getElementById("platform").innerHTML =
+      "<h2>Wpisz ciężary żeby utworzyć kolejkę</h2>";
+    return;
+  }
+
+  if (currentIndex >= groupLifters.length) currentIndex = 0;
+
+  let l = groupLifters[currentIndex];
 
   document.getElementById("platform").innerHTML = `
     <h3>${l.name || "BRAK"} (${l.category || "-"})</h3>
@@ -87,32 +106,33 @@ function renderPlatform() {
 
     <br>
 
-    1: <input value="${l.attempts[0]}" onchange="setAttempt(0,this.value)">
-    2: <input value="${l.attempts[1]}" onchange="setAttempt(1,this.value)">
-    3: <input value="${l.attempts[2]}" onchange="setAttempt(2,this.value)">
+    1: <input value="${l.attempts[0]}" onchange="setAttempt(l,0,this.value)">
+    2: <input value="${l.attempts[1]}" onchange="setAttempt(l,1,this.value)">
+    3: <input value="${l.attempts[2]}" onchange="setAttempt(l,2,this.value)">
   `;
 
   document.getElementById("info").innerText =
-    "Zawodnik " + (currentIndex+1) + " / " + groupLifters.length;
+    "Kolejka: " + (currentIndex+1) + " / " + groupLifters.length;
 
   sync(l, attempt);
 }
 
-function setAttempt(n, val) {
-  let groupLifters = getGroupLifters();
-  groupLifters[currentIndex].attempts[n] = val;
+function setAttempt(lifter, n, val) {
+  lifter.attempts[n] = val;
   renderPlatform();
 }
 
 function nextMove() {
 
-  let groupLifters = getGroupLifters();
+  let groupLifters = getGroupLiftersSorted();
+
+  if (groupLifters.length === 0) return;
 
   if (currentIndex < groupLifters.length - 1) {
     currentIndex++;
   } else {
 
-    // koniec rundy w grupie
+    // koniec rundy
     if (currentRound < 3) {
       currentRound++;
       currentIndex = 0;
