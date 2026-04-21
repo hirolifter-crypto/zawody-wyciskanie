@@ -26,7 +26,6 @@ h1 { font-size:5vh; }
 #current {
   font-size:10vh;
   color:yellow;
-  font-weight:bold;
 }
 
 #club {
@@ -37,11 +36,15 @@ h1 { font-size:5vh; }
 #weight {
   font-size:14vh;
   color:red;
-  font-weight:bold;
+}
+
+#timer {
+  font-size:10vh;
+  color:cyan;
 }
 
 #next {
-  margin-top:5vh;
+  margin-top:4vh;
   font-size:4vh;
   color:lightgray;
 }
@@ -57,6 +60,7 @@ h1 { font-size:5vh; }
 <div id="current">---</div>
 <div id="club"></div>
 <div id="weight">---</div>
+<div id="timer"></div>
 
 <div id="next"></div>
 
@@ -66,12 +70,17 @@ h1 { font-size:5vh; }
 
 function update() {
   let data = JSON.parse(localStorage.getItem("live"));
+  let t = localStorage.getItem("timer");
+
   if (!data) return;
 
   document.getElementById("current").innerText = data.name || "---";
   document.getElementById("club").innerText = data.club || "";
   document.getElementById("weight").innerText =
     (data.weight || "---") + " kg";
+
+  document.getElementById("timer").innerText =
+    t ? "CZAS: " + t + "s" : "";
 
   if (data.nextName) {
     document.getElementById("next").innerText =
