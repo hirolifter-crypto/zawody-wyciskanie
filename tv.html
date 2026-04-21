@@ -36,26 +36,33 @@ body {
 
 <div id="current">---</div>
 <div id="weight">---</div>
-
 <div id="next"></div>
 
 <script>
+
 function update() {
-  let data = JSON.parse(localStorage.getItem("live"));
-  if (!data) return;
+  try {
+    let data = JSON.parse(localStorage.getItem("live"));
+    if (!data) return;
 
-  document.getElementById("current").innerText = data.name || "---";
-  document.getElementById("weight").innerText = (data.weight || "---") + " kg";
+    document.getElementById("current").innerText = data.name || "---";
+    document.getElementById("weight").innerText =
+      (data.weight ? data.weight : "---") + " kg";
 
-  if (data.nextName) {
-    document.getElementById("next").innerText =
-      "W KOLEJCE: " + data.nextName + " (" + data.nextWeight + " kg)";
-  } else {
-    document.getElementById("next").innerText = "";
-  }
+    if (data.nextName) {
+      document.getElementById("next").innerText =
+        "W KOLEJCE: " + data.nextName + " (" + data.nextWeight + " kg)";
+    } else {
+      document.getElementById("next").innerText = "";
+    }
+
+  } catch(e) {}
 }
 
-setInterval(update, 300);
+// 🔥 pewne odświeżanie
+setInterval(update, 200);
+update();
+
 </script>
 
 </body>
