@@ -11,6 +11,7 @@ body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 input { margin:2px; padding:5px; }
 button { margin:5px; padding:12px; font-size:16px; }
 h2 { color:yellow; }
+.big { font-size:22px; color:#0f0; }
 </style>
 </head>
 
@@ -25,8 +26,9 @@ h2 { color:yellow; }
 <h2>Pomost</h2>
 <div id="platform"></div>
 
+<div class="big" id="info"></div>
+
 <button onclick="nextMove()">➡️ Następny ruch</button>
-<button onclick="prevLifter()">⬅️ Cofnij</button>
 
 <script>
 let groups = [10,10,10,12];
@@ -54,8 +56,8 @@ function init() {
       });
 
       div.innerHTML += `
-        <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value; sync()">
-        <input placeholder="Kat." onchange="lifters[${id}].category=this.value; sync()">
+        <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value">
+        <input placeholder="Kat." onchange="lifters[${id}].category=this.value">
         <br>
       `;
       id++;
@@ -68,12 +70,12 @@ function init() {
 }
 
 function renderPlatform() {
-  let currentAttempt = currentRound - 1;
+  let attempt = currentRound - 1;
   let l = lifters[currentIndex];
 
   document.getElementById("platform").innerHTML = `
     <h3>${l.name || "BRAK"} (${l.category || "-"})</h3>
-    <h2>Runda ${currentRound} / Próba ${currentAttempt+1}</h2>
+    <h2>Runda ${currentRound} / Próba ${attempt+1}</h2>
 
     <br>
 
@@ -81,6 +83,9 @@ function renderPlatform() {
     2: <input value="${l.attempts[1]}" onchange="setAttempt(1,this.value)">
     3: <input value="${l.attempts[2]}" onchange="setAttempt(2,this.value)">
   `;
+
+  document.getElementById("info").innerText =
+    "Zawodnik " + (currentIndex+1) + " / " + lifters.length;
 
   sync();
 }
@@ -92,7 +97,7 @@ function setAttempt(n, val) {
 
 function nextMove() {
 
-  // kolejny zawodnik
+  // jeśli nie ostatni zawodnik
   if (currentIndex < lifters.length - 1) {
     currentIndex++;
   } 
@@ -101,6 +106,10 @@ function nextMove() {
     if (currentRound < 3) {
       currentRound++;
       currentIndex = 0;
+
+      document.getElementById("info").innerText =
+        "START RUNDY " + currentRound;
+
     } else {
       document.getElementById("platform").innerHTML =
         "<h2>🏁 KONIEC ZAWODÓW</h2>";
@@ -111,21 +120,14 @@ function nextMove() {
   renderPlatform();
 }
 
-function prevLifter() {
-  if (currentIndex > 0) {
-    currentIndex--;
-    renderPlatform();
-  }
-}
-
 function sync() {
   let l = lifters[currentIndex];
-  let currentAttempt = currentRound - 1;
+  let attempt = currentRound - 1;
 
   localStorage.setItem("live", JSON.stringify({
     name: l.name,
     attempts: l.attempts,
-    attemptNumber: currentAttempt
+    attemptNumber: attempt
   }));
 }
 
