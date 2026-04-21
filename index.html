@@ -80,9 +80,9 @@ function renderPlatform() {
 
     <br><br>
 
-    1: <input onchange="setAttempt(0,this.value)">
-    2: <input onchange="setAttempt(1,this.value)">
-    3: <input onchange="setAttempt(2,this.value)">
+   1: <input value="${l.attempts[0]}" onchange="setAttempt(0,this.value)">
+2: <input value="${l.attempts[1]}" onchange="setAttempt(1,this.value)">
+3: <input value="${l.attempts[2]}" onchange="setAttempt(2,this.value)">
   `;
 
   sync();
