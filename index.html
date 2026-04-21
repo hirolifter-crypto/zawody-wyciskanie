@@ -9,7 +9,7 @@ body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 .container { display:flex; flex-wrap:wrap; justify-content:center; }
 .group { border:1px solid #444; margin:10px; padding:10px; width:300px; }
 input { margin:2px; padding:5px; }
-button { margin:5px; padding:10px; font-size:16px; }
+button { margin:5px; padding:12px; font-size:16px; }
 h2 { color:yellow; }
 </style>
 </head>
@@ -32,7 +32,6 @@ h2 { color:yellow; }
 let groups = [10,10,10,12];
 let lifters = [];
 let currentIndex = 0;
-let currentAttempt = 0;
 let currentRound = 1;
 
 function init() {
@@ -69,7 +68,7 @@ function init() {
 }
 
 function renderPlatform() {
-  currentAttempt = currentRound - 1;
+  let currentAttempt = currentRound - 1;
   let l = lifters[currentIndex];
 
   document.getElementById("platform").innerHTML = `
@@ -96,26 +95,20 @@ function nextMove() {
   // kolejny zawodnik
   if (currentIndex < lifters.length - 1) {
     currentIndex++;
-    renderPlatform();
-    return;
+  } 
+  else {
+    // koniec rundy
+    if (currentRound < 3) {
+      currentRound++;
+      currentIndex = 0;
+    } else {
+      document.getElementById("platform").innerHTML =
+        "<h2>🏁 KONIEC ZAWODÓW</h2>";
+      return;
+    }
   }
 
-  // koniec rundy
-  if (currentRound < 3) {
-    currentRound++;
-    currentIndex = 0;
-
-    document.getElementById("platform").innerHTML =
-      "<h2>➡️ START RUNDY " + currentRound + "</h2>";
-
-    setTimeout(() => {
-      renderPlatform();
-    }, 700);
-
-  } else {
-    document.getElementById("platform").innerHTML =
-      "<h2>🏁 KONIEC ZAWODÓW</h2>";
-  }
+  renderPlatform();
 }
 
 function prevLifter() {
@@ -127,6 +120,7 @@ function prevLifter() {
 
 function sync() {
   let l = lifters[currentIndex];
+  let currentAttempt = currentRound - 1;
 
   localStorage.setItem("live", JSON.stringify({
     name: l.name,
