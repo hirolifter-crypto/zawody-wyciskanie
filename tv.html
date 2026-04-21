@@ -23,31 +23,11 @@ body {
 
 h1 { font-size:5vh; }
 
-#current {
-  font-size:10vh;
-  color:yellow;
-}
-
-#club {
-  font-size:4vh;
-  color:lightgray;
-}
-
-#weight {
-  font-size:14vh;
-  color:red;
-}
-
-#timer {
-  font-size:10vh;
-  color:cyan;
-}
-
-#next {
-  margin-top:4vh;
-  font-size:4vh;
-  color:lightgray;
-}
+#current { font-size:10vh; color:yellow; }
+#club { font-size:4vh; color:lightgray; }
+#weight { font-size:14vh; color:red; }
+#timer { font-size:10vh; color:cyan; }
+#next { margin-top:4vh; font-size:4vh; color:lightgray; }
 </style>
 </head>
 
@@ -70,7 +50,7 @@ h1 { font-size:5vh; }
 
 function update() {
   let data = JSON.parse(localStorage.getItem("live"));
-  let t = localStorage.getItem("timer");
+  let tData = JSON.parse(localStorage.getItem("timer"));
 
   if (!data) return;
 
@@ -79,8 +59,10 @@ function update() {
   document.getElementById("weight").innerText =
     (data.weight || "---") + " kg";
 
+  let t = tData ? tData.value : null;
+
   document.getElementById("timer").innerText =
-    t ? "CZAS: " + t + "s" : "";
+    t !== null ? "CZAS: " + t + "s" : "";
 
   if (data.nextName) {
     document.getElementById("next").innerText =
