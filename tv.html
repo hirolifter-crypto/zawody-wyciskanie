@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>EKRAN TV</title>
+
+<style>
+body {
+  background:black;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+}
+
+h1 {
+  font-size:60px;
+}
+
+#name {
+  font-size:80px;
+  color:yellow;
+}
+
+#weight {
+  font-size:120px;
+  color:red;
+}
+</style>
+</head>
+
+<body>
+
+<h1>NA POMOŚCIE</h1>
+<div id="name">---</div>
+<div id="weight">---</div>
+
+<script>
+function update() {
+  let data = JSON.parse(localStorage.getItem("live"));
+  if (data && data.lifter) {
+    document.getElementById("name").innerText = data.lifter.name || "---";
+    document.getElementById("weight").innerText =
+      (data.lifter.attempts[0] || "---") + " kg";
+  }
+}
+
+setInterval(update, 500);
+</script>
+
+</body>
+</html>
