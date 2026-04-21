@@ -33,6 +33,8 @@ h2 { color:yellow; }
 <script>
 let groups = [10,10,10,12];
 let lifters = [];
+
+let currentGroup = 0;
 let currentIndex = 0;
 let currentRound = 1;
 
@@ -50,6 +52,7 @@ function init() {
 
     for (let i=0;i<size;i++) {
       lifters.push({
+        group: g,
         name: "",
         category: "",
         attempts: ["","",""]
@@ -69,13 +72,18 @@ function init() {
   renderPlatform();
 }
 
+function getGroupLifters() {
+  return lifters.filter(l => l.group === currentGroup);
+}
+
 function renderPlatform() {
+  let groupLifters = getGroupLifters();
+  let l = groupLifters[currentIndex];
   let attempt = currentRound - 1;
-  let l = lifters[currentIndex];
 
   document.getElementById("platform").innerHTML = `
     <h3>${l.name || "BRAK"} (${l.category || "-"})</h3>
-    <h2>Runda ${currentRound} / Próba ${attempt+1}</h2>
+    <h2>Grupa ${currentGroup+1} / Runda ${currentRound} / Próba ${attempt+1}</h2>
 
     <br>
 
@@ -85,45 +93,47 @@ function renderPlatform() {
   `;
 
   document.getElementById("info").innerText =
-    "Zawodnik " + (currentIndex+1) + " / " + lifters.length;
+    "Zawodnik " + (currentIndex+1) + " / " + groupLifters.length;
 
-  sync();
+  sync(l, attempt);
 }
 
 function setAttempt(n, val) {
-  lifters[currentIndex].attempts[n] = val;
-  sync();
+  let groupLifters = getGroupLifters();
+  groupLifters[currentIndex].attempts[n] = val;
+  renderPlatform();
 }
 
 function nextMove() {
 
-  // jeśli nie ostatni zawodnik
-  if (currentIndex < lifters.length - 1) {
+  let groupLifters = getGroupLifters();
+
+  if (currentIndex < groupLifters.length - 1) {
     currentIndex++;
-  } 
-  else {
-    // koniec rundy
+  } else {
+
+    // koniec rundy w grupie
     if (currentRound < 3) {
       currentRound++;
       currentIndex = 0;
-
-      document.getElementById("info").innerText =
-        "START RUNDY " + currentRound;
-
     } else {
-      document.getElementById("platform").innerHTML =
-        "<h2>🏁 KONIEC ZAWODÓW</h2>";
-      return;
+      // koniec grupy
+      if (currentGroup < groups.length - 1) {
+        currentGroup++;
+        currentRound = 1;
+        currentIndex = 0;
+      } else {
+        document.getElementById("platform").innerHTML =
+          "<h2>🏁 KONIEC ZAWODÓW</h2>";
+        return;
+      }
     }
   }
 
   renderPlatform();
 }
 
-function sync() {
-  let l = lifters[currentIndex];
-  let attempt = currentRound - 1;
-
+function sync(l, attempt) {
   localStorage.setItem("live", JSON.stringify({
     name: l.name,
     attempts: l.attempts,
