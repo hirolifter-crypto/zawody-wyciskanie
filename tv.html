@@ -12,9 +12,7 @@ body {
   font-family:Arial;
 }
 
-h1 {
-  font-size:60px;
-}
+h1 { font-size:60px; }
 
 #name {
   font-size:80px;
@@ -31,20 +29,33 @@ h1 {
 <body>
 
 <h1>NA POMOŚCIE</h1>
-<div id="name">---</div>
+<div id="name">BRAK</div>
 <div id="weight">---</div>
 
 <script>
+window.addEventListener("storage", function(e) {
+  if (e.key === "live") {
+    update();
+  }
+});
+
 function update() {
-  let data = JSON.parse(localStorage.getItem("live"));
-  if (data && data.lifter) {
-    document.getElementById("name").innerText = data.lifter.name || "---";
+  try {
+    let data = JSON.parse(localStorage.getItem("live"));
+
+    if (!data) return;
+
+    document.getElementById("name").innerText = data.name || "BRAK";
     document.getElementById("weight").innerText =
-      (data.lifter.attempts[0] || "---") + " kg";
+      (data.attempts && data.attempts[0] ? data.attempts[0] : "---") + " kg";
+
+  } catch (e) {
+    console.log("Błąd danych", e);
   }
 }
 
-setInterval(update, 500);
+// pierwsze odczytanie
+update();
 </script>
 
 </body>
