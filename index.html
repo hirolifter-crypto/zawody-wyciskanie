@@ -72,12 +72,11 @@ function renderPlatform() {
     <h3>${l.name || "BRAK"} (${l.category || "-"})</h3>
 
     <label>Próba:</label>
-  <select onchange="setAttemptNumber(this.value)">
+ <select onchange="setAttemptNumber(this.value)">
   <option value="0" ${currentAttempt==0 ? "selected" : ""}>1</option>
   <option value="1" ${currentAttempt==1 ? "selected" : ""}>2</option>
   <option value="2" ${currentAttempt==2 ? "selected" : ""}>3</option>
 </select>
-    </select>
 <br><br>
 <button onclick="nextAttempt()">➡️ Następna próba</button>
     <br><br>
@@ -93,17 +92,23 @@ function renderPlatform() {
 function nextLifter() {
   if (currentIndex < lifters.length-1) {
     currentIndex++;
+    currentAttempt = 0;
     renderPlatform();
-  }
+    }
 }
 
 function prevLifter() {
   if (currentIndex > 0) {
     currentIndex--;
+    currentAttempt = 0;
     renderPlatform();
-  }
+    }
 }
 function setAttempt(n, val) {
+  lifters[currentIndex].attempts[n] = val;
+  sync();
+}
+ function setAttempt(n, val) {
   lifters[currentIndex].attempts[n] = val;
   sync();
 }
@@ -112,9 +117,7 @@ function setAttempt(n, val) {
     currentAttempt++;
     renderPlatform();
   }
-}
-  sync();
-}
+} 
 function sync() {
   let l = lifters[currentIndex];
 
