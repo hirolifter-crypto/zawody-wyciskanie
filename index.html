@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody IPF</title>
+<title>Zawody IPF PRO</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
@@ -17,7 +17,7 @@ h3 { color:lightgray; }
 
 <body>
 
-<h1>PANEL SĘDZIOWSKI – IPF</h1>
+<h1>PANEL SĘDZIOWSKI – IPF PRO</h1>
 
 <button onclick="openTV()">📺 Ekran TV</button>
 
@@ -59,9 +59,9 @@ function init() {
       div.innerHTML += `
         <input placeholder="Nazwisko" onchange="updateName(${id}, this.value)">
         <input placeholder="Klub" onchange="updateClub(${id}, this.value)">
-        <input placeholder="1" onchange="updateAttempt(${id},0,this.value)">
-        <input placeholder="2" onchange="updateAttempt(${id},1,this.value)">
-        <input placeholder="3" onchange="updateAttempt(${id},2,this.value)">
+        <input placeholder="1" oninput="updateAttempt(${id},0,this.value)">
+        <input placeholder="2" oninput="updateAttempt(${id},1,this.value)">
+        <input placeholder="3" oninput="updateAttempt(${id},2,this.value)">
         <br>
       `;
       id++;
@@ -83,6 +83,10 @@ function updateClub(id, val) {
 
 function updateAttempt(id, n, val) {
   lifters[id].attempts[n] = val.trim();
+
+  // 🔥 LIVE PRZELICZENIE KOLEJKI
+  currentIndex = 0;
+  renderPlatform();
 }
 
 function getQueue() {
