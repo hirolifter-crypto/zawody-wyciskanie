@@ -77,7 +77,8 @@ function renderPlatform() {
       <option value="1">2</option>
       <option value="2">3</option>
     </select>
-
+<br><br>
+<button onclick="nextAttempt()">➡️ Następna próba</button>
     <br><br>
 
    1: <input value="${l.attempts[0]}" onchange="setAttempt(0,this.value)">
@@ -103,6 +104,12 @@ function prevLifter() {
 }
 function setAttempt(n, val) {
   lifters[currentIndex].attempts[n] = val;
+  function nextAttempt() {
+  if (currentAttempt < 2) {
+    currentAttempt++;
+    renderPlatform();
+  }
+}
   sync();
 }
 function sync() {
