@@ -32,6 +32,7 @@ let groups = [10,10,10,12];
 let lifters = [];
 let currentIndex = 0;
 let currentAttempt = 0;
+
 function init() {
   let container = document.getElementById("groups");
   container.innerHTML = "";
@@ -53,7 +54,7 @@ function init() {
 
       div.innerHTML += `
         <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value; sync()">
-       <input placeholder="Kat." onchange="lifters[${id}].category=this.value; sync()">
+        <input placeholder="Kat." onchange="lifters[${id}].category=this.value; sync()">
         <br>
       `;
       id++;
@@ -72,21 +73,41 @@ function renderPlatform() {
     <h3>${l.name || "BRAK"} (${l.category || "-"})</h3>
 
     <label>Próba:</label>
- <select onchange="setAttemptNumber(this.value)">
-  <option value="0" ${currentAttempt==0 ? "selected" : ""}>1</option>
-  <option value="1" ${currentAttempt==1 ? "selected" : ""}>2</option>
-  <option value="2" ${currentAttempt==2 ? "selected" : ""}>3</option>
-</select>
-<br><br>
-<button onclick="nextAttempt()">➡️ Następna próba</button>
+    <select onchange="setAttemptNumber(this.value)">
+      <option value="0" ${currentAttempt==0 ? "selected" : ""}>1</option>
+      <option value="1" ${currentAttempt==1 ? "selected" : ""}>2</option>
+      <option value="2" ${currentAttempt==2 ? "selected" : ""}>3</option>
+    </select>
+
     <br><br>
 
-   1: <input value="${l.attempts[0]}" onchange="setAttempt(0,this.value)">
-2: <input value="${l.attempts[1]}" onchange="setAttempt(1,this.value)">
-3: <input value="${l.attempts[2]}" onchange="setAttempt(2,this.value)">
+    <button onclick="nextAttempt()">➡️ Następna próba</button>
+
+    <br><br>
+
+    1: <input value="${l.attempts[0]}" onchange="setAttempt(0,this.value)">
+    2: <input value="${l.attempts[1]}" onchange="setAttempt(1,this.value)">
+    3: <input value="${l.attempts[2]}" onchange="setAttempt(2,this.value)">
   `;
 
   sync();
+}
+
+function setAttempt(n, val) {
+  lifters[currentIndex].attempts[n] = val;
+  sync();
+}
+
+function setAttemptNumber(val) {
+  currentAttempt = parseInt(val);
+  sync();
+}
+
+function nextAttempt() {
+  if (currentAttempt < 2) {
+    currentAttempt++;
+    renderPlatform();
+  }
 }
 
 function nextLifter() {
@@ -94,7 +115,7 @@ function nextLifter() {
     currentIndex++;
     currentAttempt = 0;
     renderPlatform();
-    }
+  }
 }
 
 function prevLifter() {
@@ -102,22 +123,9 @@ function prevLifter() {
     currentIndex--;
     currentAttempt = 0;
     renderPlatform();
-    }
-}
-function setAttempt(n, val) {
-  lifters[currentIndex].attempts[n] = val;
-  sync();
-}
- function setAttempt(n, val) {
-  lifters[currentIndex].attempts[n] = val;
-  sync();
-}
- function nextAttempt() {
-  if (currentAttempt < 2) {
-    currentAttempt++;
-    renderPlatform();
   }
-} 
+}
+
 function sync() {
   let l = lifters[currentIndex];
 
