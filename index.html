@@ -9,7 +9,8 @@ body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 .container { display:flex; flex-wrap:wrap; justify-content:center; }
 .group { border:1px solid #444; margin:10px; padding:10px; width:300px; }
 input { margin:2px; padding:5px; }
-button { margin:5px; padding:10px; }
+button { margin:5px; padding:10px; font-size:16px; }
+h2 { color:yellow; }
 </style>
 </head>
 
@@ -24,7 +25,6 @@ button { margin:5px; padding:10px; }
 <h2>Pomost</h2>
 <div id="platform"></div>
 
-<!-- 🔥 JEDEN PRZYCISK DO CAŁYCH ZAWODÓW -->
 <button onclick="nextMove()">➡️ Następny ruch</button>
 <button onclick="prevLifter()">⬅️ Cofnij</button>
 
@@ -74,7 +74,6 @@ function renderPlatform() {
 
   document.getElementById("platform").innerHTML = `
     <h3>${l.name || "BRAK"} (${l.category || "-"})</h3>
-
     <h2>Runda ${currentRound} / Próba ${currentAttempt+1}</h2>
 
     <br>
@@ -94,20 +93,29 @@ function setAttempt(n, val) {
 
 function nextMove() {
 
+  // kolejny zawodnik
   if (currentIndex < lifters.length - 1) {
     currentIndex++;
-  } else {
-    if (currentRound < 3) {
-      currentRound++;
-      currentIndex = 0;
-      alert("➡️ START RUNDY " + currentRound);
-    } else {
-      alert("🏁 KONIEC ZAWODÓW");
-      return;
-    }
+    renderPlatform();
+    return;
   }
 
-  renderPlatform();
+  // koniec rundy
+  if (currentRound < 3) {
+    currentRound++;
+    currentIndex = 0;
+
+    document.getElementById("platform").innerHTML =
+      "<h2>➡️ START RUNDY " + currentRound + "</h2>";
+
+    setTimeout(() => {
+      renderPlatform();
+    }, 700);
+
+  } else {
+    document.getElementById("platform").innerHTML =
+      "<h2>🏁 KONIEC ZAWODÓW</h2>";
+  }
 }
 
 function prevLifter() {
