@@ -2,25 +2,25 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody IPF PRO</title>
+<title>Zawody IPF PRO + GL</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 .container { display:flex; flex-wrap:wrap; justify-content:center; }
-.group { border:1px solid #444; margin:10px; padding:10px; width:340px; }
-input { margin:2px; padding:5px; width:80px; }
+.group { border:1px solid #444; margin:10px; padding:10px; width:360px; }
+input, select { margin:2px; padding:5px; width:70px; }
 button { margin:5px; padding:12px; font-size:16px; }
-h2 { color:yellow; }
-h3 { color:lightgray; }
-.timer { color:cyan; font-size:28px; }
+table { width:90%; margin:auto; border-collapse:collapse; }
+td, th { border:1px solid #555; padding:8px; }
 </style>
 </head>
 
 <body>
 
-<h1>PANEL SĘDZIOWSKI</h1>
+<h1>PANEL SĘDZIOWSKI – IPF GL</h1>
 
-<button onclick="openTV()">📺 Ekran TV</button>
+<button onclick="openTV()">📺 TV</button>
+<button onclick="showResults()">📊 WYNIKI</button>
 
 <div class="container" id="groups"></div>
 
@@ -28,6 +28,8 @@ h3 { color:lightgray; }
 <div id="platform"></div>
 
 <button onclick="nextMove()">➡️ Następny ruch</button>
+
+<div id="results"></div>
 
 <script>
 
@@ -38,28 +40,14 @@ let currentGroup = 0;
 let currentIndex = 0;
 let currentRound = 0;
 
-// 🔥 TIMER
-let timer = 60;
-let timerInterval = null;
+// 🔥 IPF GL (uproczony wzór)
+function ipfGL(total, bw, sex) {
+  if (!bw || !total) return 0;
 
-function startTimer() {
-  clearInterval(timerInterval);
-  timer = 60;
+  let A = sex === "K" ? 610 : 1199.72839;
+  let B = sex === "K" ? 1045 : 1025.18162;
 
-  timerInterval = setInterval(() => {
-    timer--;
-
-    // 🔥 zapis z timestampem (ważne!)
-    localStorage.setItem("timer", JSON.stringify({
-      value: timer,
-      time: Date.now()
-    }));
-
-    renderPlatform();
-
-    if (timer <= 0) clearInterval(timerInterval);
-
-  }, 1000);
+  return (total * 100) / (A - B * Math.exp(-0.009 * bw));
 }
 
 function init() {
@@ -78,12 +66,20 @@ function init() {
         group: g,
         name: "",
         club: "",
+        bw: "",
+        sex: "M",
         attempts: ["","",""]
       });
 
       div.innerHTML += `
-        <input placeholder="Nazwisko" onchange="updateName(${id}, this.value)">
-        <input placeholder="Klub" onchange="updateClub(${id}, this.value)">
+        <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value">
+        <input placeholder="Klub" onchange="lifters[${id}].club=this.value">
+        <input placeholder="Waga" onchange="lifters[${id}].bw=this.value">
+        <select onchange="lifters[${id}].sex=this.value">
+          <option value="M">M</option>
+          <option value="K">K</option>
+        </select>
+        <br>
         <input placeholder="1" oninput="updateAttempt(${id},0,this.value)">
         <input placeholder="2" oninput="updateAttempt(${id},1,this.value)">
         <input placeholder="3" oninput="updateAttempt(${id},2,this.value)">
@@ -98,94 +94,76 @@ function init() {
   renderPlatform();
 }
 
-function updateName(id, val) {
-  lifters[id].name = val.trim();
-}
-
-function updateClub(id, val) {
-  lifters[id].club = val.trim();
-}
-
 function updateAttempt(id, n, val) {
-  lifters[id].attempts[n] = val.trim();
+  lifters[id].attempts[n] = val;
   currentIndex = 0;
   renderPlatform();
 }
 
-function getQueue() {
-  let groupLifters = lifters.filter(l => l.group === currentGroup);
+function bestLift(l) {
+  return Math.max(...l.attempts.map(x => parseFloat(x)||0));
+}
 
-  return groupLifters
-    .filter(l => l.attempts[currentRound] !== "")
-    .sort((a,b) => parseFloat(a.attempts[currentRound]) - parseFloat(b.attempts[currentRound]));
+function getQueue() {
+  return lifters
+    .filter(l => l.group === currentGroup && l.attempts[currentRound])
+    .sort((a,b) => a.attempts[currentRound]-b.attempts[currentRound]);
 }
 
 function renderPlatform() {
+  let q = getQueue();
+  if (!q.length) return;
 
-  let queue = getQueue();
-
-  if (queue.length === 0) {
-    document.getElementById("platform").innerHTML =
-      "<h2>Wpisz ciężary w grupie</h2>";
-    return;
-  }
-
-  if (currentIndex >= queue.length) currentIndex = 0;
-
-  let l = queue[currentIndex];
-  let next = queue[currentIndex+1];
-
+  let l = q[currentIndex];
   document.getElementById("platform").innerHTML = `
     <h2>${l.name}</h2>
-    <h3>${l.club || ""}</h3>
-    <h2>Grupa ${currentGroup+1} / Próba ${currentRound+1}</h2>
+    <h3>${l.club}</h3>
     <h1>${l.attempts[currentRound]} kg</h1>
-    <div class="timer">CZAS: ${timer}s</div>
   `;
-
-  localStorage.setItem("live", JSON.stringify({
-    name: l.name,
-    club: l.club,
-    weight: l.attempts[currentRound],
-    nextName: next ? next.name : "",
-    nextWeight: next ? next.attempts[currentRound] : "",
-    attemptNumber: currentRound,
-    time: Date.now()
-  }));
 }
 
 function nextMove() {
+  let q = getQueue();
+  if (!q.length) return;
 
-  let queue = getQueue();
-  if (queue.length === 0) return;
-
-  if (currentIndex < queue.length - 1) {
-    currentIndex++;
-  } else {
-
-    if (currentRound < 2) {
-      currentRound++;
-      currentIndex = 0;
-    } else {
-
-      if (currentGroup < groups.length - 1) {
-        currentGroup++;
-        currentRound = 0;
-        currentIndex = 0;
-      } else {
-        document.getElementById("platform").innerHTML =
-          "<h2>🏁 KONIEC ZAWODÓW</h2>";
-        return;
-      }
-    }
+  if (currentIndex < q.length-1) currentIndex++;
+  else {
+    if (currentRound<2){currentRound++; currentIndex=0;}
+    else {currentGroup++; currentRound=0; currentIndex=0;}
   }
 
-  startTimer(); // 🔥 start
   renderPlatform();
 }
 
+function showResults() {
+
+  let results = lifters.map(l => {
+    let best = bestLift(l);
+    let pts = ipfGL(best, l.bw, l.sex);
+    return {...l, best, pts};
+  });
+
+  results.sort((a,b)=>b.pts-a.pts);
+
+  let html = "<h2>WYNIKI</h2><table><tr><th>Miejsce</th><th>Nazwisko</th><th>Kg</th><th>Waga</th><th>Punkty</th></tr>";
+
+  results.forEach((l,i)=>{
+    html += `<tr>
+      <td>${i+1}</td>
+      <td>${l.name}</td>
+      <td>${l.best}</td>
+      <td>${l.bw}</td>
+      <td>${l.pts.toFixed(2)}</td>
+    </tr>`;
+  });
+
+  html += "</table>";
+
+  document.getElementById("results").innerHTML = html;
+}
+
 function openTV() {
-  window.open("tv.html", "_blank");
+  window.open("tv.html","_blank");
 }
 
 init();
