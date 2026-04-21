@@ -2,36 +2,22 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody – Wyciskanie Leżąc</title>
+<title>Zawody</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
-h1 { color:#0f0; }
-
 .container { display:flex; flex-wrap:wrap; justify-content:center; }
 .group { border:1px solid #444; margin:10px; padding:10px; width:300px; }
-
 input { margin:2px; padding:5px; }
-button { margin:5px; padding:10px; font-size:14px; }
-
-.tv {
-  font-size: 60px;
-  color: yellow;
-}
-
-.big {
-  font-size: 100px;
-  color: red;
-}
+button { margin:5px; padding:10px; }
 </style>
 </head>
 
 <body>
 
-<h1>ZAWODY – PANEL SĘDZIOWSKI</h1>
+<h1>PANEL SĘDZIOWSKI</h1>
 
-<button onclick="openTV()">📺 Otwórz ekran TV</button>
-<button onclick="saveData()">💾 Zapisz</button>
+<button onclick="openTV()">📺 Ekran TV</button>
 
 <div class="container" id="groups"></div>
 
@@ -60,15 +46,14 @@ function init() {
 
     for (let i=0;i<size;i++) {
       lifters.push({
-        id: id,
         name: "",
-        weightClass: "",
+        category: "",
         attempts: ["","",""]
       });
 
       div.innerHTML += `
-        <input placeholder="Nazwisko" onchange="updateName(${id}, this.value)">
-        <input placeholder="Kategoria" onchange="updateCat(${id}, this.value)">
+        <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value">
+        <input placeholder="Kat." onchange="lifters[${id}].category=this.value">
         <br>
       `;
       id++;
@@ -80,25 +65,16 @@ function init() {
   renderPlatform();
 }
 
-function updateName(id, val) { lifters[id].name = val; sync(); }
-function updateCat(id, val) { lifters[id].weightClass = val; sync(); }
-
 function renderPlatform() {
   let l = lifters[currentIndex];
-  document.getElementById("platform").innerHTML = `
-    <h3>${l.name || "BRAK"} (${l.weightClass || "-"})</h3>
-    <div>
-      1: <input onchange="setAttempt(0,this.value)" value="${l.attempts[0]}">
-      2: <input onchange="setAttempt(1,this.value)" value="${l.attempts[1]}">
-      3: <input onchange="setAttempt(2,this.value)" value="${l.attempts[2]}">
-    </div>
-    <p>Zawodnik ${currentIndex+1} / ${lifters.length}</p>
-  `;
-  sync();
-}
 
-function setAttempt(n, val) {
-  lifters[currentIndex].attempts[n] = val;
+  document.getElementById("platform").innerHTML = `
+    <h3>${l.name || "BRAK"} (${l.category || "-"})</h3>
+    1: <input onchange="lifters[${currentIndex}].attempts[0]=this.value;sync()">
+    2: <input onchange="lifters[${currentIndex}].attempts[1]=this.value;sync()">
+    3: <input onchange="lifters[${currentIndex}].attempts[2]=this.value;sync()">
+  `;
+
   sync();
 }
 
@@ -116,43 +92,13 @@ function prevLifter() {
   }
 }
 
-function saveData() {
-  localStorage.setItem("zawody", JSON.stringify(lifters));
-  alert("Zapisano!");
-}
-
 function sync() {
-  localStorage.setItem("live", JSON.stringify({
-    lifter: lifters[currentIndex],
-    index: currentIndex
-  }));
+  let l = lifters[currentIndex];
+  localStorage.setItem("live", JSON.stringify(l));
 }
 
-// 📺 EKRAN TV
 function openTV() {
   window.open("tv.html", "_blank");
-}
-
-  win.document.write(`
-    <html>
-    <body style="background:black; color:white; text-align:center;">
-      <h1>NA POMOŚCIE</h1>
-      <div id="name" class="tv"></div>
-      <div id="weight" class="big"></div>
-
-      <script>
-        function update() {
-          let data = JSON.parse(localStorage.getItem("live"));
-          if (data) {
-            document.getElementById("name").innerText = data.lifter.name;
-            document.getElementById("weight").innerText = data.lifter.attempts[0] + " kg";
-          }
-        }
-        setInterval(update, 500);
-      <\/script>
-    </body>
-    </html>
-  `);
 }
 
 init();
