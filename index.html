@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody IPF PRO FINAL</title>
+<title>Zawody IPF FINAL</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
@@ -11,7 +11,6 @@ body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 input, select { margin:2px; padding:5px; width:70px; }
 button { margin:5px; padding:12px; font-size:16px; }
 h2 { color:yellow; }
-h3 { color:lightgray; }
 .timer { color:cyan; font-size:28px; }
 table { width:90%; margin:auto; border-collapse:collapse; }
 td, th { border:1px solid #555; padding:6px; }
@@ -20,9 +19,9 @@ td, th { border:1px solid #555; padding:6px; }
 
 <body>
 
-<h1>PANEL SĘDZIOWSKI – FINAL PRO</h1>
+<h1>PANEL SĘDZIOWSKI</h1>
 
-<button onclick="openTV()">📺 Ekran TV</button>
+<button onclick="openTV()">📺 TV</button>
 <button onclick="showResults()">📊 WYNIKI</button>
 
 <div class="container" id="groups"></div>
@@ -31,6 +30,8 @@ td, th { border:1px solid #555; padding:6px; }
 <div id="platform"></div>
 
 <button onclick="nextMove()">➡️ Następny ruch</button>
+
+<div id="results"></div>
 
 <script>
 
@@ -41,15 +42,14 @@ let currentGroup = 0;
 let currentIndex = 0;
 let currentRound = 0;
 
-// TIMER
 let timer = 60;
 let timerInterval = null;
 
-function startTimer() {
+function startTimer(){
   clearInterval(timerInterval);
   timer = 60;
 
-  timerInterval = setInterval(() => {
+  timerInterval = setInterval(()=>{
     timer--;
 
     localStorage.setItem("timer", JSON.stringify({
@@ -59,43 +59,37 @@ function startTimer() {
 
     renderPlatform();
 
-    if (timer <= 0) clearInterval(timerInterval);
-
-  }, 1000);
+    if(timer<=0) clearInterval(timerInterval);
+  },1000);
 }
 
-// IPF GL (stabilny)
-function ipfGL(total, bw, sex) {
-  if (!bw || !total) return 0;
-  bw = parseFloat(bw);
-  total = parseFloat(total);
-
-  return sex === "K"
-    ? total * (500 / (bw + 25))
-    : total * (500 / (bw + 40));
+function ipfGL(total,bw,sex){
+  if(!bw || !total) return 0;
+  bw=parseFloat(bw);
+  total=parseFloat(total);
+  return sex==="K" ? total*(500/(bw+25)) : total*(500/(bw+40));
 }
 
-function bestLift(l) {
-  return Math.max(...l.attempts.map(x => parseFloat(x)||0));
+function bestLift(l){
+  return Math.max(...l.attempts.map(x=>parseFloat(x)||0));
 }
 
-function init() {
-  let container = document.getElementById("groups");
-  let id = 0;
+function init(){
+  let container=document.getElementById("groups");
+  let id=0;
 
-  groups.forEach((size, g) => {
-    let div = document.createElement("div");
-    div.className = "group";
-    div.innerHTML = "<h3>Grupa " + (g+1) + "</h3>";
+  groups.forEach((size,g)=>{
+    let div=document.createElement("div");
+    div.className="group";
+    div.innerHTML="<h3>Grupa "+(g+1)+"</h3>";
 
-    for (let i=0;i<size;i++) {
+    for(let i=0;i<size;i++){
       lifters.push({
-        group:g, name:"", club:"",
-        bw:"", sex:"M",
+        group:g,name:"",club:"",bw:"",sex:"M",
         attempts:["","",""]
       });
 
-      div.innerHTML += `
+      div.innerHTML+=`
         <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value">
         <input placeholder="Klub" onchange="lifters[${id}].club=this.value">
         <input placeholder="Waga" onchange="lifters[${id}].bw=this.value">
@@ -127,12 +121,13 @@ function updateAttempt(id,n,val){
 function getQueue(){
   return lifters
     .filter(l=>l.group===currentGroup && l.attempts[currentRound])
-    .sort((a,b)=>a.attempts[currentRound]-b.attempts[currentRound]);
+    .sort((a,b)=>parseFloat(a.attempts[currentRound])-parseFloat(b.attempts[currentRound]));
 }
 
 function renderPlatform(){
 
   let q=getQueue();
+
   if(!q.length){
     document.getElementById("platform").innerHTML="<h2>Wpisz ciężary</h2>";
     return;
@@ -141,7 +136,7 @@ function renderPlatform(){
   if(currentIndex>=q.length) currentIndex=0;
 
   let l=q[currentIndex];
-  let next=q[currentIndex+1];
+  let next=q[currentIndex+1] || null;
 
   document.getElementById("platform").innerHTML=`
     <h2>${l.name}</h2>
@@ -150,12 +145,13 @@ function renderPlatform(){
     <div class="timer">CZAS: ${timer}s</div>
   `;
 
+  // 🔥 KLUCZOWE: zawsze wysyłamy next
   localStorage.setItem("live", JSON.stringify({
     name:l.name,
     club:l.club,
     weight:l.attempts[currentRound],
-    nextName:next?next.name:"",
-    nextWeight:next?next.attempts[currentRound]:"",
+    nextName: next ? next.name : "",
+    nextWeight: next ? next.attempts[currentRound] : "",
     time:Date.now()
   }));
 }
@@ -165,13 +161,18 @@ function nextMove(){
   let q=getQueue();
   if(!q.length) return;
 
-  if(currentIndex<q.length-1) currentIndex++;
-  else{
-    if(currentRound<2){currentRound++; currentIndex=0;}
-    else{
+  if(currentIndex<q.length-1){
+    currentIndex++;
+  } else {
+    if(currentRound<2){
+      currentRound++;
+      currentIndex=0;
+    } else {
       if(currentGroup<groups.length-1){
-        currentGroup++; currentRound=0; currentIndex=0;
-      }else{
+        currentGroup++;
+        currentRound=0;
+        currentIndex=0;
+      } else {
         document.getElementById("platform").innerHTML="<h2>KONIEC</h2>";
         return;
       }
@@ -185,15 +186,14 @@ function nextMove(){
 function showResults(){
 
   let results = lifters.map(l=>{
-    let best = bestLift(l);
-    let pts = ipfGL(best,l.bw,l.sex);
+    let best=bestLift(l);
+    let pts=ipfGL(best,l.bw,l.sex);
     return {...l,best,pts};
-  });
+  }).filter(l=>l.best>0);
 
-  results=results.filter(l=>l.best>0);
   results.sort((a,b)=>b.pts-a.pts);
 
-  let html="<h2>WYNIKI</h2><table><tr><th>#</th><th>Nazwisko</th><th>Kg</th><th>BW</th><th>Pts</th></tr>";
+  let html="<h2>WYNIKI</h2><table><tr><th>#</th><th>Nazwisko</th><th>Kg</th><th>BW</th><th>Pkt</th></tr>";
 
   results.forEach((l,i)=>{
     html+=`<tr>
@@ -206,7 +206,8 @@ function showResults(){
   });
 
   html+="</table>";
-  document.getElementById("platform").innerHTML=html;
+
+  document.getElementById("results").innerHTML=html;
 }
 
 function openTV(){
