@@ -48,7 +48,12 @@ function startTimer() {
 
   timerInterval = setInterval(() => {
     timer--;
-    localStorage.setItem("timer", timer);
+
+    // 🔥 zapis z timestampem (ważne!)
+    localStorage.setItem("timer", JSON.stringify({
+      value: timer,
+      time: Date.now()
+    }));
 
     renderPlatform();
 
@@ -175,7 +180,7 @@ function nextMove() {
     }
   }
 
-  startTimer(); // 🔥 start timera
+  startTimer(); // 🔥 start
   renderPlatform();
 }
 
