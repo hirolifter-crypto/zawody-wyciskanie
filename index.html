@@ -94,7 +94,11 @@ function prevLifter() {
 
 function sync() {
   let l = lifters[currentIndex];
-  localStorage.setItem("live", JSON.stringify(l));
+
+  localStorage.setItem("live", JSON.stringify({
+    name: l.name,
+    attempts: l.attempts
+  }));
 }
 
 function openTV() {
