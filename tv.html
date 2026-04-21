@@ -12,9 +12,7 @@ body {
   font-family:Arial;
 }
 
-h1 { font-size:60px; }
-
-#name {
+#current {
   font-size:80px;
   color:yellow;
 }
@@ -23,42 +21,41 @@ h1 { font-size:60px; }
   font-size:120px;
   color:red;
 }
+
+#next {
+  margin-top:40px;
+  font-size:40px;
+  color:lightgray;
+}
 </style>
 </head>
 
 <body>
 
 <h1>NA POMOŚCIE</h1>
-<div id="name">BRAK</div>
+
+<div id="current">---</div>
 <div id="weight">---</div>
 
+<div id="next"></div>
+
 <script>
-window.addEventListener("storage", function(e) {
-  if (e.key === "live") {
-    update();
-  }
-});
-
 function update() {
-  try {
-    let data = JSON.parse(localStorage.getItem("live"));
+  let data = JSON.parse(localStorage.getItem("live"));
+  if (!data) return;
 
-    if (!data) return;
+  document.getElementById("current").innerText = data.name || "---";
+  document.getElementById("weight").innerText = (data.weight || "---") + " kg";
 
-    document.getElementById("name").innerText = data.name || "BRAK";
-    let attempt = data.attemptNumber || 0;
-let weight = (data.attempts && data.attempts[attempt]) ? data.attempts[attempt] : "---";
-
-document.getElementById("weight").innerText =
-  "PRÓBA " + (attempt+1) + " — " + weight + " kg";
-
-  } catch (e) {
-    console.log("Błąd danych", e);
+  if (data.nextName) {
+    document.getElementById("next").innerText =
+      "W KOLEJCE: " + data.nextName + " (" + data.nextWeight + " kg)";
+  } else {
+    document.getElementById("next").innerText = "";
   }
 }
 
-// pierwsze odczytanie
-update();
+setInterval(update, 300);
 </script>
 
 </body>
