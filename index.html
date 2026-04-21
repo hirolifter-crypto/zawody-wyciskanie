@@ -92,6 +92,7 @@ function renderPlatform() {
   if (currentIndex >= queue.length) currentIndex = 0;
 
   let l = queue[currentIndex];
+  let next = queue[currentIndex+1];
 
   document.getElementById("platform").innerHTML = `
     <h2>${l.name}</h2>
@@ -101,7 +102,9 @@ function renderPlatform() {
 
   localStorage.setItem("live", JSON.stringify({
     name: l.name,
-    attempts: l.attempts,
+    weight: l.attempts[currentRound],
+    nextName: next ? next.name : "",
+    nextWeight: next ? next.attempts[currentRound] : "",
     attemptNumber: currentRound
   }));
 }
@@ -109,20 +112,17 @@ function renderPlatform() {
 function nextMove() {
 
   let queue = getQueue();
-
   if (queue.length === 0) return;
 
   if (currentIndex < queue.length - 1) {
     currentIndex++;
   } else {
 
-    // kolejna próba
     if (currentRound < 2) {
       currentRound++;
       currentIndex = 0;
     } else {
 
-      // następna grupa
       if (currentGroup < groups.length - 1) {
         currentGroup++;
         currentRound = 0;
