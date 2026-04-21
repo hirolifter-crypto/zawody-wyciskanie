@@ -12,6 +12,7 @@ input { margin:2px; padding:5px; width:80px; }
 button { margin:5px; padding:12px; font-size:16px; }
 h2 { color:yellow; }
 h3 { color:lightgray; }
+.timer { color:cyan; font-size:28px; }
 </style>
 </head>
 
@@ -36,6 +37,25 @@ let lifters = [];
 let currentGroup = 0;
 let currentIndex = 0;
 let currentRound = 0;
+
+// 🔥 TIMER
+let timer = 60;
+let timerInterval = null;
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timer = 60;
+
+  timerInterval = setInterval(() => {
+    timer--;
+    localStorage.setItem("timer", timer);
+
+    renderPlatform();
+
+    if (timer <= 0) clearInterval(timerInterval);
+
+  }, 1000);
+}
 
 function init() {
   let container = document.getElementById("groups");
@@ -115,6 +135,7 @@ function renderPlatform() {
     <h3>${l.club || ""}</h3>
     <h2>Grupa ${currentGroup+1} / Próba ${currentRound+1}</h2>
     <h1>${l.attempts[currentRound]} kg</h1>
+    <div class="timer">CZAS: ${timer}s</div>
   `;
 
   localStorage.setItem("live", JSON.stringify({
@@ -154,6 +175,7 @@ function nextMove() {
     }
   }
 
+  startTimer(); // 🔥 start timera
   renderPlatform();
 }
 
