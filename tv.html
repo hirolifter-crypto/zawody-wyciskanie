@@ -46,8 +46,11 @@ function update() {
     if (!data) return;
 
     document.getElementById("name").innerText = data.name || "BRAK";
-    document.getElementById("weight").innerText =
-      (data.attempts && data.attempts[0] ? data.attempts[0] : "---") + " kg";
+    let attempt = data.attemptNumber || 0;
+let weight = (data.attempts && data.attempts[attempt]) ? data.attempts[attempt] : "---";
+
+document.getElementById("weight").innerText =
+  "PRÓBA " + (attempt+1) + " — " + weight + " kg";
 
   } catch (e) {
     console.log("Błąd danych", e);
