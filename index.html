@@ -24,7 +24,8 @@ button { margin:5px; padding:10px; }
 <h2>Pomost</h2>
 <div id="platform"></div>
 
-<button onclick="nextLifter()">➡️ Następny</button>
+<!-- 🔥 JEDEN PRZYCISK DO CAŁYCH ZAWODÓW -->
+<button onclick="nextMove()">➡️ Następny ruch</button>
 <button onclick="prevLifter()">⬅️ Cofnij</button>
 
 <script>
@@ -32,6 +33,7 @@ let groups = [10,10,10,12];
 let lifters = [];
 let currentIndex = 0;
 let currentAttempt = 0;
+let currentRound = 1;
 
 function init() {
   let container = document.getElementById("groups");
@@ -67,23 +69,15 @@ function init() {
 }
 
 function renderPlatform() {
+  currentAttempt = currentRound - 1;
   let l = lifters[currentIndex];
 
   document.getElementById("platform").innerHTML = `
     <h3>${l.name || "BRAK"} (${l.category || "-"})</h3>
 
-    <label>Próba:</label>
-    <select onchange="setAttemptNumber(this.value)">
-      <option value="0" ${currentAttempt==0 ? "selected" : ""}>1</option>
-      <option value="1" ${currentAttempt==1 ? "selected" : ""}>2</option>
-      <option value="2" ${currentAttempt==2 ? "selected" : ""}>3</option>
-    </select>
+    <h2>Runda ${currentRound} / Próba ${currentAttempt+1}</h2>
 
-    <br><br>
-
-    <button onclick="nextAttempt()">➡️ Następna próba</button>
-
-    <br><br>
+    <br>
 
     1: <input value="${l.attempts[0]}" onchange="setAttempt(0,this.value)">
     2: <input value="${l.attempts[1]}" onchange="setAttempt(1,this.value)">
@@ -98,30 +92,27 @@ function setAttempt(n, val) {
   sync();
 }
 
-function setAttemptNumber(val) {
-  currentAttempt = parseInt(val);
-  sync();
-}
+function nextMove() {
 
-function nextAttempt() {
-  if (currentAttempt < 2) {
-    currentAttempt++;
-    renderPlatform();
-  }
-}
-
-function nextLifter() {
-  if (currentIndex < lifters.length-1) {
+  if (currentIndex < lifters.length - 1) {
     currentIndex++;
-    currentAttempt = 0;
-    renderPlatform();
+  } else {
+    if (currentRound < 3) {
+      currentRound++;
+      currentIndex = 0;
+      alert("➡️ START RUNDY " + currentRound);
+    } else {
+      alert("🏁 KONIEC ZAWODÓW");
+      return;
+    }
   }
+
+  renderPlatform();
 }
 
 function prevLifter() {
   if (currentIndex > 0) {
     currentIndex--;
-    currentAttempt = 0;
     renderPlatform();
   }
 }
