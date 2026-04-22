@@ -2,17 +2,17 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody PRO</title>
+<title>Zawody IPF PRO</title>
 
 <style>
-body { background:#111; color:#fff; font-family:Arial; text-align:center; }
+body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 .container { display:flex; flex-wrap:wrap; justify-content:center; }
-.group { border:1px solid #444; margin:10px; padding:10px; width:420px; }
-input { margin:2px; padding:5px; width:70px; }
-button { margin:3px; padding:8px; }
-.ok { background:green; }
-.fail { background:red; }
-.timer { font-size:32px; color:cyan; }
+.group { border:1px solid #444; margin:10px; padding:10px; width:340px; }
+input { margin:2px; padding:5px; width:80px; }
+button { margin:5px; padding:12px; font-size:16px; }
+h2 { color:yellow; }
+h3 { color:lightgray; }
+.timer { color:cyan; font-size:28px; }
 </style>
 </head>
 
@@ -20,215 +20,172 @@ button { margin:3px; padding:8px; }
 
 <h1>PANEL SĘDZIOWSKI</h1>
 
-<button onclick="openTV()">📺 TV</button>
-<button onclick="exportData()">💾 ZAPISZ</button>
-<input type="file" onchange="importData(event)">
-<button onclick="resetAll()">🗑 RESET</button>
+<button onclick="openTV()">📺 Ekran TV</button>
 
 <div class="container" id="groups"></div>
 
 <h2>Pomost</h2>
 <div id="platform"></div>
 
-<button onclick="nextMove()">➡️ Następny</button>
+<button onclick="nextMove()">➡️ Następny ruch</button>
 
 <script>
 
+let groups = [10,10,10,12];
 let lifters = [];
+
+let currentGroup = 0;
 let currentIndex = 0;
 let currentRound = 0;
 
-let timer = 0;
-let interval = null;
+// 🔥 TIMER
+let timer = 60;
+let timerInterval = null;
 
-// ===== TIMER =====
-function startTimer(){
-  clearInterval(interval);
-  timer = 0;
+function startTimer() {
+  clearInterval(timerInterval);
+  timer = 60;
 
-  interval = setInterval(()=>{
-    timer++;
-    localStorage.setItem("timer", JSON.stringify({value:timer}));
+  timerInterval = setInterval(() => {
+    timer--;
+
+    // 🔥 zapis z timestampem (ważne!)
+    localStorage.setItem("timer", JSON.stringify({
+      value: timer,
+      time: Date.now()
+    }));
+
     renderPlatform();
-    if(timer>=60) clearInterval(interval);
-  },1000);
+
+    if (timer <= 0) clearInterval(timerInterval);
+
+  }, 1000);
 }
 
-// ===== SAVE =====
-function save(){
-  localStorage.setItem("data", JSON.stringify({
-    lifters,currentIndex,currentRound
-  }));
-}
+function init() {
+  let container = document.getElementById("groups");
+  container.innerHTML = "";
 
-function load(){
-  let d = JSON.parse(localStorage.getItem("data"));
-  if(d){
-    lifters = d.lifters || [];
-    currentIndex = d.currentIndex || 0;
-    currentRound = d.currentRound || 0;
-  }
-}
+  let id = 0;
 
-// ===== BACKUP =====
-function exportData(){
-  let blob = new Blob([JSON.stringify({
-    lifters,currentIndex,currentRound
-  })],{type:"application/json"});
+  groups.forEach((size, g) => {
+    let div = document.createElement("div");
+    div.className = "group";
+    div.innerHTML = "<h3>Grupa " + (g+1) + "</h3>";
 
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "backup.json";
-  a.click();
-}
-
-function importData(e){
-  let r = new FileReader();
-  r.onload = function(){
-    let d = JSON.parse(r.result);
-    lifters = d.lifters || [];
-    currentIndex = d.currentIndex || 0;
-    currentRound = d.currentRound || 0;
-    save();
-    location.reload();
-  };
-  r.readAsText(e.target.files[0]);
-}
-
-function resetAll(){
-  localStorage.clear();
-  location.reload();
-}
-
-// ===== INIT =====
-function init(){
-
-  load();
-
-  let c = document.getElementById("groups");
-  c.innerHTML = "";
-
-  if(lifters.length === 0){
-    for(let i=0;i<20;i++){
+    for (let i=0;i<size;i++) {
       lifters.push({
-        name:"",
-        club:"",
-        attempts:[
-          {w:"",ok:null},
-          {w:"",ok:null},
-          {w:"",ok:null}
-        ]
+        group: g,
+        name: "",
+        club: "",
+        attempts: ["","",""]
       });
+
+      div.innerHTML += `
+        <input placeholder="Nazwisko" onchange="updateName(${id}, this.value)">
+        <input placeholder="Klub" onchange="updateClub(${id}, this.value)">
+        <input placeholder="1" oninput="updateAttempt(${id},0,this.value)">
+        <input placeholder="2" oninput="updateAttempt(${id},1,this.value)">
+        <input placeholder="3" oninput="updateAttempt(${id},2,this.value)">
+        <br>
+      `;
+      id++;
     }
-  }
 
-  lifters.forEach((l,i)=>{
-    c.innerHTML += `
-      <div class="group">
-        <input value="${l.name}" placeholder="Zawodnik"
-        onchange="lifters[${i}].name=this.value;save();renderPlatform()">
-
-        <input value="${l.club}" placeholder="Klub"
-        onchange="lifters[${i}].club=this.value;save();renderPlatform()"><br>
-
-        ${attemptUI(i,0)}
-        ${attemptUI(i,1)}
-        ${attemptUI(i,2)}
-      </div>
-    `;
+    container.appendChild(div);
   });
 
   renderPlatform();
 }
 
-// ===== PRÓBY =====
-function attemptUI(i,n){
-  let a = lifters[i].attempts[n];
-  return `
-    <input value="${a.w}" placeholder="${n+1}"
-    oninput="setW(${i},${n},this.value)">
-    <button class="${a.ok===true?'ok':''}" onclick="setR(${i},${n},true)">✔</button>
-    <button class="${a.ok===false?'fail':''}" onclick="setR(${i},${n},false)">❌</button>
-  `;
+function updateName(id, val) {
+  lifters[id].name = val.trim();
 }
 
-function setW(i,n,v){
-  lifters[i].attempts[n].w = v;
-  save();
+function updateClub(id, val) {
+  lifters[id].club = val.trim();
+}
+
+function updateAttempt(id, n, val) {
+  lifters[id].attempts[n] = val.trim();
+  currentIndex = 0;
   renderPlatform();
 }
 
-function setR(i,n,r){
-  lifters[i].attempts[n].ok = r;
-  save();
-  init();
+function getQueue() {
+  let groupLifters = lifters.filter(l => l.group === currentGroup);
+
+  return groupLifters
+    .filter(l => l.attempts[currentRound] !== "")
+    .sort((a,b) => parseFloat(a.attempts[currentRound]) - parseFloat(b.attempts[currentRound]));
 }
 
-// ===== KOLEJKA =====
-function toNum(v){return parseFloat(v)||0;}
+function renderPlatform() {
 
-function queue(){
-  return lifters
-    .filter(l=>l.attempts[currentRound].w)
-    .sort((a,b)=>toNum(a.attempts[currentRound].w)-toNum(b.attempts[currentRound].w));
-}
+  let queue = getQueue();
 
-// ===== PLATFORM =====
-function renderPlatform(){
-
-  let q = queue();
-
-  if(!q.length){
-    document.getElementById("platform").innerHTML="Wpisz ciężary";
+  if (queue.length === 0) {
+    document.getElementById("platform").innerHTML =
+      "<h2>Wpisz ciężary w grupie</h2>";
     return;
   }
 
-  if(currentIndex>=q.length) currentIndex=0;
+  if (currentIndex >= queue.length) currentIndex = 0;
 
-  let l = q[currentIndex];
-  let next = q[currentIndex+1];
+  let l = queue[currentIndex];
+  let next = queue[currentIndex+1];
 
-  document.getElementById("platform").innerHTML=`
+  document.getElementById("platform").innerHTML = `
     <h2>${l.name}</h2>
-    <h3>${l.club}</h3>
-    <h1>${l.attempts[currentRound].w} kg</h1>
-    <div class="timer">${timer}s</div>
+    <h3>${l.club || ""}</h3>
+    <h2>Grupa ${currentGroup+1} / Próba ${currentRound+1}</h2>
+    <h1>${l.attempts[currentRound]} kg</h1>
+    <div class="timer">CZAS: ${timer}s</div>
   `;
 
   localStorage.setItem("live", JSON.stringify({
-    name:l.name,
-    club:l.club,
-    weight:l.attempts[currentRound].w,
-    next: next ? next.name : ""
+    name: l.name,
+    club: l.club,
+    weight: l.attempts[currentRound],
+    nextName: next ? next.name : "",
+    nextWeight: next ? next.attempts[currentRound] : "",
+    attemptNumber: currentRound,
+    time: Date.now()
   }));
 }
 
-// ===== NEXT =====
-function nextMove(){
+function nextMove() {
 
-  let q = queue();
-  if(!q.length) return;
+  let queue = getQueue();
+  if (queue.length === 0) return;
 
-  if(currentIndex < q.length-1){
+  if (currentIndex < queue.length - 1) {
     currentIndex++;
   } else {
-    if(currentRound < 2){
+
+    if (currentRound < 2) {
       currentRound++;
-      currentIndex=0;
+      currentIndex = 0;
     } else {
-      currentRound=0;
-      currentIndex=0;
+
+      if (currentGroup < groups.length - 1) {
+        currentGroup++;
+        currentRound = 0;
+        currentIndex = 0;
+      } else {
+        document.getElementById("platform").innerHTML =
+          "<h2>🏁 KONIEC ZAWODÓW</h2>";
+        return;
+      }
     }
   }
 
-  save();
-  startTimer();
+  startTimer(); // 🔥 start
   renderPlatform();
 }
 
-// ===== TV =====
-function openTV(){
-  window.open("tv.html","_blank");
+function openTV() {
+  window.open("tv.html", "_blank");
 }
 
 init();
