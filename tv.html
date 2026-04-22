@@ -36,23 +36,27 @@ body {background:black;color:white;text-align:center;font-family:Arial;margin:0;
 
 function update(){
 
-  let data=JSON.parse(localStorage.getItem("live"));
-  let tData=JSON.parse(localStorage.getItem("timer"));
+  let data = JSON.parse(localStorage.getItem("live"));
+  let tData = JSON.parse(localStorage.getItem("timer"));
 
   if(!data) return;
 
-  document.getElementById("current").innerText=data.name||"";
-  document.getElementById("club").innerText=data.club||"";
-  document.getElementById("category").innerText=data.category||"";
-  document.getElementById("weight").innerText=(data.weight||"")+" kg";
+  document.getElementById("current").innerText = data.name || "";
+  document.getElementById("club").innerText = data.club || "";
+  document.getElementById("category").innerText = data.category || "";
+  document.getElementById("weight").innerText = (data.weight || "") + " kg";
 
-  let t=tData?tData.value:"";
-  document.getElementById("timer").innerText="CZAS: "+t+"s";
+  let t = tData ? tData.value : "";
+  document.getElementById("timer").innerText = "CZAS: " + t + "s";
 
-  document.getElementById("record").innerText="REKORD: "+(data.record||"-");
+  document.getElementById("record").innerText =
+    data.record ? "REKORD: " + data.record + " kg" : "";
 
-  document.getElementById("next").innerText =
-    data.nextName ? "W KOLEJCE: "+data.nextName+" ("+data.nextWeight+" kg)" : "";
+  let nextText = "";
+  if(data.nextName && data.nextWeight){
+    nextText = "W KOLEJCE: " + data.nextName + " (" + data.nextWeight + " kg)";
+  }
+  document.getElementById("next").innerText = nextText;
 }
 
 setInterval(update,200);
