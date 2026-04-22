@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody PRO</title>
+<title>Zawody FINAL</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
@@ -12,8 +12,6 @@ input { margin:2px; padding:5px; width:80px; }
 button { margin:5px; padding:12px; font-size:16px; }
 h2 { color:yellow; }
 .timer { color:cyan; font-size:28px; }
-table { width:90%; margin:auto; border-collapse:collapse; }
-td, th { border:1px solid #555; padding:6px; }
 </style>
 </head>
 
@@ -120,36 +118,40 @@ function getQueue(){
 
 function renderPlatform(){
 
-  let q=getQueue();
+  let q = getQueue();
 
   if(!q.length){
     document.getElementById("platform").innerHTML="<h2>Wpisz ciężary</h2>";
     return;
   }
 
-  if(currentIndex>=q.length) currentIndex=0;
+  if(currentIndex >= q.length) currentIndex = 0;
 
-  let l=q[currentIndex];
-  let next=q[currentIndex+1];
+  let l = q[currentIndex];
 
-  document.getElementById("platform").innerHTML=`
-    <h2>${l.name}</h2>
-    <h3>${l.club}</h3>
-    <h3>${l.category}</h3>
-    <h1>${l.attempts[currentRound]} kg</h1>
+  let next = null;
+  if(currentIndex + 1 < q.length){
+    next = q[currentIndex + 1];
+  }
+
+  document.getElementById("platform").innerHTML = `
+    <h2>${l.name || ""}</h2>
+    <h3>${l.club || ""}</h3>
+    <h3>${l.category || ""}</h3>
+    <h1>${l.attempts[currentRound] || ""} kg</h1>
     <div class="timer">CZAS: ${timer}s</div>
     <h3>REKORD: ${l.record || "-"}</h3>
   `;
 
   localStorage.setItem("live", JSON.stringify({
-    name:l.name,
-    club:l.club,
-    category:l.category,
-    record:l.record,
-    weight:l.attempts[currentRound],
-    nextName:next?next.name:"",
-    nextWeight:next?next.attempts[currentRound]:"",
-    time:Date.now()
+    name: l.name || "",
+    club: l.club || "",
+    category: l.category || "",
+    record: l.record || "",
+    weight: l.attempts[currentRound] || "",
+    nextName: next ? next.name : "",
+    nextWeight: next ? next.attempts[currentRound] : "",
+    time: Date.now()
   }));
 }
 
@@ -188,7 +190,7 @@ function showResults(){
 
   results.sort((a,b)=>b.best-a.best);
 
-  let html="<h2>WYNIKI</h2><table><tr><th>#</th><th>Nazwisko</th><th>Kat.</th><th>Kg</th></tr>";
+  let html="<h2>WYNIKI</h2><table border='1'><tr><th>#</th><th>Nazwisko</th><th>Kat.</th><th>Kg</th></tr>";
 
   results.forEach((l,i)=>{
     html+=`<tr>
