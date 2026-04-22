@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody FINAL</title>
+<title>Zawody FINAL PRO</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
@@ -11,6 +11,8 @@ body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 input { margin:2px; padding:5px; width:80px; }
 button { margin:5px; padding:12px; font-size:16px; }
 .timer { color:cyan; font-size:28px; }
+table { width:90%; margin:auto; border-collapse:collapse; }
+td, th { border:1px solid #555; padding:6px; }
 </style>
 </head>
 
@@ -21,6 +23,8 @@ button { margin:5px; padding:12px; font-size:16px; }
 <button onclick="openTV()">📺 TV</button>
 <button onclick="showResults()">📊 WYNIKI</button>
 <button onclick="resetAll()">🗑 RESET</button>
+<button onclick="exportData()">💾 ZAPISZ</button>
+<input type="file" id="fileInput" onchange="importData(event)">
 
 <div class="container" id="groups"></div>
 
@@ -48,7 +52,7 @@ function toNum(val){
   return parseFloat((val || "").toString().replace(",", ".")) || 0;
 }
 
-// 🔥 ZAPIS
+// 🔥 ZAPIS localStorage
 function saveAll(){
   localStorage.setItem("zawody", JSON.stringify({
     lifters,
@@ -73,6 +77,53 @@ function loadAll(){
 function resetAll(){
   localStorage.clear();
   location.reload();
+}
+
+// 🔥 EXPORT do pliku
+function exportData(){
+  let data = {
+    lifters,
+    currentGroup,
+    currentIndex,
+    currentRound
+  };
+
+  let blob = new Blob([JSON.stringify(data)], {type:"application/json"});
+  let url = URL.createObjectURL(blob);
+
+  let a = document.createElement("a");
+  a.href = url;
+  a.download = "zawody_backup.json";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+// 🔥 IMPORT z pliku
+function importData(event){
+  let file = event.target.files[0];
+  if(!file) return;
+
+  let reader = new FileReader();
+
+  reader.onload = function(e){
+    try{
+      let data = JSON.parse(e.target.result);
+
+      lifters = data.lifters || [];
+      currentGroup = data.currentGroup || 0;
+      currentIndex = data.currentIndex || 0;
+      currentRound = data.currentRound || 0;
+
+      saveAll();
+      location.reload();
+
+    } catch{
+      alert("Błąd pliku!");
+    }
+  };
+
+  reader.readAsText(file);
 }
 
 // TIMER
@@ -247,7 +298,7 @@ function showResults(){
 
   results.sort((a,b)=>b.improve - a.improve);
 
-  let html="<h2>WYNIKI</h2><table border='1'>";
+  let html="<h2>WYNIKI</h2><table>";
   html+="<tr><th>#</th><th>Nazwisko</th><th>Kat.</th><th>Kg</th><th>Rekord</th><th>+/-</th><th>NOWY?</th></tr>";
 
   results.forEach((l,i)=>{
