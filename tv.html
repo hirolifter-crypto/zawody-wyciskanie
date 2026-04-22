@@ -17,14 +17,14 @@ body {background:black;color:white;text-align:center;font-family:Arial;margin:0;
 #newrecord{font-size:8vh;color:lime;font-weight:bold;}
 #next{font-size:4vh;margin-top:4vh;}
 
-@keyframes pulseRecord {
-  0% {transform:scale(1);}
-  50% {transform:scale(1.3);}
-  100% {transform:scale(1);}
+@keyframes pulse {
+  0%{transform:scale(1);}
+  50%{transform:scale(1.3);}
+  100%{transform:scale(1);}
 }
 
-.pulse {
-  animation: pulseRecord 0.8s infinite;
+.pulse{
+  animation:pulse 0.8s infinite;
 }
 </style>
 </head>
@@ -68,10 +68,10 @@ function update(){
   document.getElementById("record").innerText =
     data.record ? "REKORD: "+data.record+" kg" : "";
 
-  let rec=toNum(data.record);
-  let w=toNum(data.weight);
+  let rec = toNum(data.record);
+  let w = toNum(data.weight);
 
-  let nr=document.getElementById("newrecord");
+  let nr = document.getElementById("newrecord");
 
   if(rec>0 && w>rec){
     nr.innerText="NOWY REKORD!";
