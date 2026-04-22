@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody FINAL PRO+</title>
+<title>Zawody FINAL SHOW</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
@@ -45,6 +45,11 @@ let currentRound = 0;
 let timer = 60;
 let timerInterval = null;
 
+// 🔥 zamiana na liczbę (obsługa 120,5)
+function toNum(val){
+  return parseFloat((val || "").toString().replace(",", ".")) || 0;
+}
+
 function startTimer(){
   clearInterval(timerInterval);
   timer = 60;
@@ -64,13 +69,11 @@ function startTimer(){
 }
 
 function bestLift(l){
-  return Math.max(...l.attempts.map(x=>parseFloat(x)||0));
+  return Math.max(...l.attempts.map(x=>toNum(x)));
 }
 
 function recordImprovement(l){
-  let best = bestLift(l);
-  let rec = parseFloat(l.record) || 0;
-  return best - rec;
+  return bestLift(l) - toNum(l.record);
 }
 
 function init(){
@@ -84,11 +87,8 @@ function init(){
 
     for(let i=0;i<size;i++){
       lifters.push({
-        group:g,
-        name:"",
-        club:"",
-        category:"",
-        record:"",
+        group:g,name:"",club:"",
+        category:"",record:"",
         attempts:["","",""]
       });
 
@@ -121,24 +121,24 @@ function updateAttempt(id,n,val){
 function getQueue(){
   return lifters
     .filter(l=>l.group===currentGroup && l.attempts[currentRound])
-    .sort((a,b)=>parseFloat(a.attempts[currentRound])-parseFloat(b.attempts[currentRound]));
+    .sort((a,b)=>toNum(a.attempts[currentRound]) - toNum(b.attempts[currentRound]));
 }
 
 function renderPlatform(){
 
-  let q = getQueue();
+  let q=getQueue();
 
   if(!q.length){
     document.getElementById("platform").innerHTML="<h2>Wpisz ciężary</h2>";
     return;
   }
 
-  if(currentIndex >= q.length) currentIndex = 0;
+  if(currentIndex>=q.length) currentIndex=0;
 
-  let l = q[currentIndex];
-  let next = (currentIndex+1<q.length)? q[currentIndex+1]:null;
+  let l=q[currentIndex];
+  let next=(currentIndex+1<q.length)?q[currentIndex+1]:null;
 
-  document.getElementById("platform").innerHTML = `
+  document.getElementById("platform").innerHTML=`
     <h2>${l.name}</h2>
     <h3>${l.club}</h3>
     <h3>${l.category}</h3>
@@ -190,16 +190,20 @@ function showResults(){
 
   let results = lifters.map(l=>{
     let best = bestLift(l);
-    let improve = recordImprovement(l);
-    return {...l, best, improve};
+    let rec = toNum(l.record);
+    let improve = best - rec;
+    let newRecord = best > rec;
+
+    return {...l, best, improve, newRecord};
   }).filter(l=>l.best>0);
 
   results.sort((a,b)=>b.improve - a.improve);
 
   let html="<h2>WYNIKI (POPRAWA REKORDU)</h2>";
-  html+="<table><tr><th>#</th><th>Nazwisko</th><th>Kat.</th><th>Kg</th><th>Rekord</th><th>+/-</th></tr>";
+  html+="<table><tr><th>#</th><th>Nazwisko</th><th>Kat.</th><th>Kg</th><th>Rekord</th><th>+/-</th><th>Rekord?</th></tr>";
 
   results.forEach((l,i)=>{
+
     let color = l.improve>=0 ? "lightgreen" : "red";
 
     html+=`<tr>
@@ -209,6 +213,7 @@ function showResults(){
       <td>${l.best}</td>
       <td>${l.record}</td>
       <td style="color:${color}">${l.improve>=0?"+":""}${l.improve}</td>
+      <td style="color:lime">${l.newRecord?"TAK":"-"}</td>
     </tr>`;
   });
 
