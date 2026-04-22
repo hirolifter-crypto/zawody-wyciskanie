@@ -2,13 +2,13 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody IPF FINAL</title>
+<title>Zawody PRO</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 .container { display:flex; flex-wrap:wrap; justify-content:center; }
 .group { border:1px solid #444; margin:10px; padding:10px; width:380px; }
-input, select { margin:2px; padding:5px; width:70px; }
+input { margin:2px; padding:5px; width:80px; }
 button { margin:5px; padding:12px; font-size:16px; }
 h2 { color:yellow; }
 .timer { color:cyan; font-size:28px; }
@@ -63,13 +63,6 @@ function startTimer(){
   },1000);
 }
 
-function ipfGL(total,bw,sex){
-  if(!bw || !total) return 0;
-  bw=parseFloat(bw);
-  total=parseFloat(total);
-  return sex==="K" ? total*(500/(bw+25)) : total*(500/(bw+40));
-}
-
 function bestLift(l){
   return Math.max(...l.attempts.map(x=>parseFloat(x)||0));
 }
@@ -85,18 +78,19 @@ function init(){
 
     for(let i=0;i<size;i++){
       lifters.push({
-        group:g,name:"",club:"",bw:"",sex:"M",
+        group:g,
+        name:"",
+        club:"",
+        category:"",
+        record:"",
         attempts:["","",""]
       });
 
       div.innerHTML+=`
         <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value">
         <input placeholder="Klub" onchange="lifters[${id}].club=this.value">
-        <input placeholder="Waga" onchange="lifters[${id}].bw=this.value">
-        <select onchange="lifters[${id}].sex=this.value">
-          <option value="M">M</option>
-          <option value="K">K</option>
-        </select><br>
+        <input placeholder="Kat." onchange="lifters[${id}].category=this.value">
+        <input placeholder="Rekord" onchange="lifters[${id}].record=this.value"><br>
 
         <input placeholder="1" oninput="updateAttempt(${id},0,this.value)">
         <input placeholder="2" oninput="updateAttempt(${id},1,this.value)">
@@ -136,22 +130,25 @@ function renderPlatform(){
   if(currentIndex>=q.length) currentIndex=0;
 
   let l=q[currentIndex];
-  let next=q[currentIndex+1] || null;
+  let next=q[currentIndex+1];
 
   document.getElementById("platform").innerHTML=`
     <h2>${l.name}</h2>
     <h3>${l.club}</h3>
-    <h2>${l.attempts[currentRound]} kg</h2>
+    <h3>${l.category}</h3>
+    <h1>${l.attempts[currentRound]} kg</h1>
     <div class="timer">CZAS: ${timer}s</div>
+    <h3>REKORD: ${l.record || "-"}</h3>
   `;
 
-  // 🔥 KLUCZOWE: zawsze wysyłamy next
   localStorage.setItem("live", JSON.stringify({
     name:l.name,
     club:l.club,
+    category:l.category,
+    record:l.record,
     weight:l.attempts[currentRound],
-    nextName: next ? next.name : "",
-    nextWeight: next ? next.attempts[currentRound] : "",
+    nextName:next?next.name:"",
+    nextWeight:next?next.attempts[currentRound]:"",
     time:Date.now()
   }));
 }
@@ -186,22 +183,19 @@ function nextMove(){
 function showResults(){
 
   let results = lifters.map(l=>{
-    let best=bestLift(l);
-    let pts=ipfGL(best,l.bw,l.sex);
-    return {...l,best,pts};
+    return {...l, best:bestLift(l)};
   }).filter(l=>l.best>0);
 
-  results.sort((a,b)=>b.pts-a.pts);
+  results.sort((a,b)=>b.best-a.best);
 
-  let html="<h2>WYNIKI</h2><table><tr><th>#</th><th>Nazwisko</th><th>Kg</th><th>BW</th><th>Pkt</th></tr>";
+  let html="<h2>WYNIKI</h2><table><tr><th>#</th><th>Nazwisko</th><th>Kat.</th><th>Kg</th></tr>";
 
   results.forEach((l,i)=>{
     html+=`<tr>
       <td>${i+1}</td>
       <td>${l.name}</td>
+      <td>${l.category}</td>
       <td>${l.best}</td>
-      <td>${l.bw}</td>
-      <td>${l.pts.toFixed(2)}</td>
     </tr>`;
   });
 
