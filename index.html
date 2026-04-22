@@ -2,59 +2,85 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>TV</title>
+<title>Zawody</title>
 
 <style>
 body {
-  background:black;
-  color:white;
-  text-align:center;
+  background:#111;
+  color:#fff;
   font-family:Arial;
+  text-align:center;
 }
 
-#name{font-size:10vh;color:yellow;}
-#weight{font-size:14vh;color:red;}
-#timer{font-size:10vh;color:cyan;}
-#next{font-size:5vh;color:lightblue;}
+input {
+  margin:5px;
+  padding:10px;
+  font-size:16px;
+}
+
+button {
+  padding:10px;
+  margin:5px;
+}
+
+.timer {
+  font-size:40px;
+  color:cyan;
+}
 </style>
 </head>
 
 <body>
 
-<h1>NA POMOŚCIE</h1>
+<h1>PANEL</h1>
 
-<div id="name"></div>
-<div id="weight"></div>
-<div id="timer"></div>
-<div id="next"></div>
+<input id="name" placeholder="Zawodnik"><br>
+<input id="club" placeholder="Klub"><br>
+<input id="weight" placeholder="Ciężar"><br>
+
+<h2 class="timer" id="timer">0</h2>
+
+<button onclick="start()">START</button>
+<button onclick="next()">NASTĘPNY</button>
+<button onclick="openTV()">📺 TV</button>
 
 <script>
 
-function update(){
+let timer = 0;
+let interval = null;
 
-  let data = JSON.parse(localStorage.getItem("live"));
-  let tData = JSON.parse(localStorage.getItem("timer"));
+function start(){
+  clearInterval(interval);
+  timer = 0;
 
-  if(!data) return;
-
-  document.getElementById("name").innerText = data.name || "";
-  document.getElementById("weight").innerText = (data.weight||"")+" kg";
-
-  // 🔥 TIMER DZIAŁA
-  let t = tData ? tData.value : 0;
-  document.getElementById("timer").innerText = "CZAS: " + t + "s";
-
-  document.getElementById("next").innerText =
-    data.nextName ? "W KOLEJCE: "+data.nextName : "";
+  interval = setInterval(()=>{
+    timer++;
+    update();
+    if(timer>=60) clearInterval(interval);
+  },1000);
 }
 
-// 🔥 LIVE
-window.addEventListener("storage", update);
+function next(){
+  start();
+}
 
-// 🔥 backup
-setInterval(update,200);
+function update(){
+  let data = {
+    name: document.getElementById("name").value,
+    club: document.getElementById("club").value,
+    weight: document.getElementById("weight").value,
+    timer: timer
+  };
 
-update();
+  localStorage.setItem("live", JSON.stringify(data));
+}
+
+function openTV(){
+  window.open("tv.html","_blank");
+}
+
+// 🔥 NIE MA AUTO STARTU
+// 🔥 NIE MA AUTO TV
 
 </script>
 
