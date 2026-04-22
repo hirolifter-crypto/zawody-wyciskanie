@@ -10,8 +10,10 @@ body {background:black;color:white;text-align:center;font-family:Arial;margin:0;
 
 #current{font-size:10vh;color:yellow;}
 #club{font-size:4vh;}
+#category{font-size:4vh;}
 #weight{font-size:14vh;color:red;}
 #timer{font-size:10vh;color:cyan;}
+#record{font-size:4vh;color:orange;}
 #next{font-size:4vh;margin-top:4vh;}
 </style>
 </head>
@@ -23,8 +25,10 @@ body {background:black;color:white;text-align:center;font-family:Arial;margin:0;
 
 <div id="current"></div>
 <div id="club"></div>
+<div id="category"></div>
 <div id="weight"></div>
 <div id="timer"></div>
+<div id="record"></div>
 <div id="next"></div>
 </div>
 
@@ -39,10 +43,13 @@ function update(){
 
   document.getElementById("current").innerText=data.name||"";
   document.getElementById("club").innerText=data.club||"";
+  document.getElementById("category").innerText=data.category||"";
   document.getElementById("weight").innerText=(data.weight||"")+" kg";
 
-  let t=tData ? tData.value : "";
+  let t=tData?tData.value:"";
   document.getElementById("timer").innerText="CZAS: "+t+"s";
+
+  document.getElementById("record").innerText="REKORD: "+(data.record||"-");
 
   document.getElementById("next").innerText =
     data.nextName ? "W KOLEJCE: "+data.nextName+" ("+data.nextWeight+" kg)" : "";
