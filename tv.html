@@ -5,8 +5,21 @@
 <title>TV</title>
 
 <style>
-body {background:black;color:white;text-align:center;font-family:Arial;margin:0;}
-.container{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;}
+body {
+  background:black;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+  margin:0;
+}
+
+.container{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
 
 #current{font-size:10vh;color:yellow;}
 #club{font-size:4vh;}
@@ -14,8 +27,23 @@ body {background:black;color:white;text-align:center;font-family:Arial;margin:0;
 #weight{font-size:14vh;color:red;}
 #timer{font-size:10vh;color:cyan;}
 #record{font-size:4vh;color:orange;}
-#newrecord{font-size:6vh;color:lime;font-weight:bold;}
+#newrecord{
+  font-size:8vh;
+  color:lime;
+  font-weight:bold;
+}
 #next{font-size:4vh;margin-top:4vh;}
+
+/* 🔥 ANIMACJA */
+@keyframes pulseRecord {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(1.3); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pulse {
+  animation: pulseRecord 0.8s infinite;
+}
 </style>
 </head>
 
@@ -48,26 +76,34 @@ function update(){
 
   if(!data) return;
 
-  document.getElementById("current").innerText=data.name||"";
-  document.getElementById("club").innerText=data.club||"";
-  document.getElementById("category").innerText=data.category||"";
-  document.getElementById("weight").innerText=(data.weight||"")+" kg";
+  document.getElementById("current").innerText = data.name || "";
+  document.getElementById("club").innerText = data.club || "";
+  document.getElementById("category").innerText = data.category || "";
+  document.getElementById("weight").innerText = (data.weight || "") + " kg";
 
-  let t=tData?tData.value:"";
-  document.getElementById("timer").innerText="CZAS: "+t+"s";
+  let t = tData ? tData.value : "";
+  document.getElementById("timer").innerText = "CZAS: " + t + "s";
 
   document.getElementById("record").innerText =
-    data.record ? "REKORD: "+data.record+" kg" : "";
+    data.record ? "REKORD: " + data.record + " kg" : "";
 
+  // 💥 NOWY REKORD + PULSACJA
   let rec = toNum(data.record);
   let w = toNum(data.weight);
 
-  document.getElementById("newrecord").innerText =
-    (rec>0 && w>rec) ? "NOWY REKORD!" : "";
+  let nr = document.getElementById("newrecord");
+
+  if(rec > 0 && w > rec){
+    nr.innerText = "NOWY REKORD!";
+    nr.classList.add("pulse");
+  } else {
+    nr.innerText = "";
+    nr.classList.remove("pulse");
+  }
 
   document.getElementById("next").innerText =
     (data.nextName && data.nextWeight)
-      ? "W KOLEJCE: "+data.nextName+" ("+data.nextWeight+" kg)"
+      ? "W KOLEJCE: " + data.nextName + " (" + data.nextWeight + " kg)"
       : "";
 }
 
