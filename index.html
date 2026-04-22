@@ -2,17 +2,19 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody FINAL SYNC</title>
+<title>Zawody FINAL PRO</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 .container { display:flex; flex-wrap:wrap; justify-content:center; }
 .group { border:1px solid #444; margin:10px; padding:10px; width:420px; }
 input { margin:2px; padding:5px; width:65px; }
-button { margin:2px; padding:6px; }
+button { margin:3px; padding:8px; font-size:14px; }
 .ok { background:green; }
 .fail { background:red; }
 .timer { color:cyan; font-size:28px; }
+table { width:90%; margin:auto; border-collapse:collapse; }
+td, th { border:1px solid #555; padding:6px; }
 </style>
 </head>
 
@@ -21,6 +23,10 @@ button { margin:2px; padding:6px; }
 <h1>PANEL SĘDZIOWSKI</h1>
 
 <button onclick="openTV()">📺 TV</button>
+<button onclick="showResults()">📊 WYNIKI</button>
+<button onclick="resetAll()">🗑 RESET</button>
+<button onclick="exportData()">💾 ZAPISZ</button>
+<input type="file" onchange="importData(event)">
 
 <div class="container" id="groups"></div>
 
@@ -28,6 +34,8 @@ button { margin:2px; padding:6px; }
 <div id="platform"></div>
 
 <button onclick="nextMove()">➡️ Następny ruch</button>
+
+<div id="results"></div>
 
 <script>
 
@@ -42,13 +50,84 @@ let timer=60;
 let timerInterval=null;
 
 function toNum(v){
-  return parseFloat((v||"").replace(",", "."))||0;
+  return parseFloat((v||"").toString().replace(",", "."))||0;
+}
+
+// ===== SAVE =====
+function saveAll(){
+  localStorage.setItem("zawody", JSON.stringify({
+    lifters,currentGroup,currentIndex,currentRound
+  }));
+}
+
+// ===== LOAD =====
+function loadAll(){
+  let d=JSON.parse(localStorage.getItem("zawody"));
+  if(d){
+    lifters=d.lifters||[];
+    currentGroup=d.currentGroup||0;
+    currentIndex=d.currentIndex||0;
+    currentRound=d.currentRound||0;
+  }
+}
+
+// ===== RESET =====
+function resetAll(){
+  localStorage.clear();
+  location.reload();
+}
+
+// ===== EXPORT =====
+function exportData(){
+  let blob=new Blob([JSON.stringify({
+    lifters,currentGroup,currentIndex,currentRound
+  })],{type:"application/json"});
+
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="backup.json";
+  a.click();
+}
+
+// ===== IMPORT =====
+function importData(e){
+  let reader=new FileReader();
+  reader.onload=function(){
+    let d=JSON.parse(reader.result);
+    lifters=d.lifters||[];
+    currentGroup=d.currentGroup||0;
+    currentIndex=d.currentIndex||0;
+    currentRound=d.currentRound||0;
+    saveAll();
+    location.reload();
+  };
+  reader.readAsText(e.target.files[0]);
+}
+
+// ===== TIMER =====
+function startTimer(){
+  clearInterval(timerInterval);
+  timer=60;
+  timerInterval=setInterval(()=>{
+    timer--;
+    localStorage.setItem("timer", JSON.stringify({value:timer}));
+    renderPlatform();
+    if(timer<=0) clearInterval(timerInterval);
+  },1000);
+}
+
+// ===== BEST =====
+function bestLift(l){
+  return Math.max(...l.attempts.map(a=>a.ok?toNum(a.weight):0));
 }
 
 // ===== INIT =====
 function init(){
 
+  loadAll();
+
   let c=document.getElementById("groups");
+  c.innerHTML="";
   let id=0;
 
   groups.forEach((size,g)=>{
@@ -58,28 +137,32 @@ function init(){
 
     for(let i=0;i<size;i++){
 
-      lifters.push({
-        group:g,name:"",club:"",
-        category:"",record:"",
-        attempts:[
-          {weight:"",ok:null},
-          {weight:"",ok:null},
-          {weight:"",ok:null}
-        ]
-      });
+      if(!lifters[id]){
+        lifters.push({
+          group:g,name:"",club:"",
+          category:"",record:"",
+          attempts:[
+            {weight:"",ok:null},
+            {weight:"",ok:null},
+            {weight:"",ok:null}
+          ]
+        });
+      }
+
+      let l=lifters[id];
 
       div.innerHTML+=`
-        <input placeholder="Nazwisko"
-        onchange="lifters[${id}].name=this.value; renderPlatform()">
+        <input value="${l.name}" placeholder="Nazwisko"
+        onchange="lifters[${id}].name=this.value;saveAll();renderPlatform()">
 
-        <input placeholder="Klub"
-        onchange="lifters[${id}].club=this.value; renderPlatform()">
+        <input value="${l.club}" placeholder="Klub"
+        onchange="lifters[${id}].club=this.value;saveAll();renderPlatform()">
 
-        <input placeholder="Kat."
-        onchange="lifters[${id}].category=this.value; renderPlatform()">
+        <input value="${l.category}" placeholder="Kat."
+        onchange="lifters[${id}].category=this.value;saveAll();renderPlatform()">
 
-        <input placeholder="Rekord"
-        onchange="lifters[${id}].record=this.value; renderPlatform()"><br>
+        <input value="${l.record}" placeholder="Rekord"
+        onchange="lifters[${id}].record=this.value;saveAll();renderPlatform()"><br>
 
         ${renderAttempt(id,0)}
         ${renderAttempt(id,1)}
@@ -98,23 +181,30 @@ function init(){
 
 // ===== PRÓBY =====
 function renderAttempt(id,n){
+  let a=lifters[id].attempts[n];
+
   return `
-    <input placeholder="${n+1}"
+    <input value="${a.weight}" placeholder="${n+1}"
     oninput="setAttempt(${id},${n},this.value)">
 
-    <button onclick="setResult(${id},${n},true)">✔</button>
-    <button onclick="setResult(${id},${n},false)">❌</button>
+    <button class="${a.ok===true?'ok':''}"
+    onclick="setResult(${id},${n},true)">✔</button>
+
+    <button class="${a.ok===false?'fail':''}"
+    onclick="setResult(${id},${n},false)">❌</button>
   `;
 }
 
 function setAttempt(id,n,val){
   lifters[id].attempts[n].weight=val;
+  saveAll();
   renderPlatform();
 }
 
 function setResult(id,n,res){
   lifters[id].attempts[n].ok=res;
-  renderPlatform();
+  saveAll();
+  init();
 }
 
 // ===== KOLEJKA =====
@@ -141,12 +231,19 @@ function renderPlatform(){
 
   document.getElementById("platform").innerHTML=`
     <h2>${l.name}</h2>
+    <h3>${l.club}</h3>
+    <h3>${l.category}</h3>
     <h1>${l.attempts[currentRound].weight} kg</h1>
+    <div class="timer">${timer}s</div>
+    <h3>REKORD: ${l.record}</h3>
   `;
 
-  // 🔥 SYNC LIVE
+  // 🔥 LIVE SYNC
   localStorage.setItem("live", JSON.stringify({
     name:l.name,
+    club:l.club,
+    category:l.category,
+    record:l.record,
     weight:l.attempts[currentRound].weight,
     nextName:next?next.name:"",
     nextWeight:next?next.attempts[currentRound].weight:"",
@@ -167,18 +264,53 @@ function nextMove(){
       currentRound++;
       currentIndex=0;
     } else {
-      currentGroup++;
-      currentRound=0;
-      currentIndex=0;
+      if(currentGroup<groups.length-1){
+        currentGroup++;
+        currentRound=0;
+        currentIndex=0;
+      } else {
+        document.getElementById("platform").innerHTML="<h2>KONIEC</h2>";
+        return;
+      }
     }
   }
 
+  saveAll();
+  startTimer();
   renderPlatform();
+}
+
+// ===== WYNIKI =====
+function showResults(){
+
+  let res=lifters.map(l=>{
+    let best=bestLift(l);
+    let rec=toNum(l.record);
+    return {...l,best,improve:best-rec,newRec:best>rec};
+  }).filter(l=>l.best>0);
+
+  res.sort((a,b)=>b.improve-a.improve);
+
+  let html="<h2>WYNIKI</h2><table>";
+  html+="<tr><th>#</th><th>Nazwisko</th><th>Kg</th><th>+/-</th><th>Rekord</th></tr>";
+
+  res.forEach((l,i)=>{
+    html+=`<tr>
+      <td>${i+1}</td>
+      <td>${l.name}</td>
+      <td>${l.best}</td>
+      <td>${l.improve>=0?"+":""}${l.improve}</td>
+      <td>${l.newRec?"TAK":""}</td>
+    </tr>`;
+  });
+
+  html+="</table>";
+  document.getElementById("results").innerHTML=html;
 }
 
 // ===== TV =====
 function openTV(){
-  window.open("tv.html","_blank");
+  window.open("./tv.html","_blank");
 }
 
 init();
