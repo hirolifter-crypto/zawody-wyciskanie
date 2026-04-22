@@ -12,7 +12,7 @@ input { margin:2px; padding:5px; width:65px; }
 button { margin:3px; padding:8px; }
 .ok { background:green; }
 .fail { background:red; }
-.timer { font-size:32px; color:cyan; }
+.timer { font-size:36px; color:cyan; }
 </style>
 </head>
 
@@ -21,10 +21,6 @@ button { margin:3px; padding:8px; }
 <h1>PANEL SĘDZIOWSKI</h1>
 
 <button onclick="openTV()">📺 TV</button>
-<button onclick="showResults()">📊 WYNIKI</button>
-<button onclick="resetAll()">🗑 RESET</button>
-<button onclick="exportData()">💾 ZAPISZ</button>
-<input type="file" onchange="importData(event)">
 
 <div class="container" id="groups"></div>
 
@@ -32,8 +28,6 @@ button { margin:3px; padding:8px; }
 <div id="platform"></div>
 
 <button onclick="nextMove()">➡️ Następny ruch</button>
-
-<div id="results"></div>
 
 <script>
 
@@ -47,12 +41,7 @@ let currentRound=0;
 let timer=0;
 let timerInterval=null;
 
-// ===== POMOC =====
-function toNum(v){
-  return parseFloat((v||"").replace(",", "."))||0;
-}
-
-// ===== TIMER 0 → 60 =====
+// ===== TIMER =====
 function startTimer(){
   clearInterval(timerInterval);
   timer = 0;
@@ -67,76 +56,16 @@ function startTimer(){
 
     renderPlatform();
 
-    if(timer >= 60){
+    if(timer>=60){
       clearInterval(timerInterval);
     }
 
   },1000);
 }
 
-// ===== SAVE =====
-function saveAll(){
-  localStorage.setItem("zawody", JSON.stringify({
-    lifters,currentGroup,currentIndex,currentRound
-  }));
-}
-
-// ===== LOAD =====
-function loadAll(){
-  let d=JSON.parse(localStorage.getItem("zawody"));
-  if(d){
-    lifters=d.lifters||[];
-    currentGroup=d.currentGroup||0;
-    currentIndex=d.currentIndex||0;
-    currentRound=d.currentRound||0;
-  }
-}
-
-// ===== RESET =====
-function resetAll(){
-  localStorage.clear();
-  location.reload();
-}
-
-// ===== EXPORT =====
-function exportData(){
-  let blob=new Blob([JSON.stringify({
-    lifters,currentGroup,currentIndex,currentRound
-  })],{type:"application/json"});
-
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="backup.json";
-  a.click();
-}
-
-// ===== IMPORT =====
-function importData(e){
-  let reader=new FileReader();
-  reader.onload=function(){
-    let d=JSON.parse(reader.result);
-    lifters=d.lifters||[];
-    currentGroup=d.currentGroup||0;
-    currentIndex=d.currentIndex||0;
-    currentRound=d.currentRound||0;
-    saveAll();
-    location.reload();
-  };
-  reader.readAsText(e.target.files[0]);
-}
-
-// ===== BEST =====
-function bestLift(l){
-  return Math.max(...l.attempts.map(a=>a.ok?toNum(a.weight):0));
-}
-
 // ===== INIT =====
 function init(){
-
-  loadAll();
-
   let c=document.getElementById("groups");
-  c.innerHTML="";
   let id=0;
 
   groups.forEach((size,g)=>{
@@ -146,32 +75,18 @@ function init(){
 
     for(let i=0;i<size;i++){
 
-      if(!lifters[id]){
-        lifters.push({
-          group:g,name:"",club:"",
-          category:"",record:"",
-          attempts:[
-            {weight:"",ok:null},
-            {weight:"",ok:null},
-            {weight:"",ok:null}
-          ]
-        });
-      }
-
-      let l=lifters[id];
+      lifters.push({
+        group:g,name:"",
+        attempts:[
+          {weight:"",ok:null},
+          {weight:"",ok:null},
+          {weight:"",ok:null}
+        ]
+      });
 
       div.innerHTML+=`
-        <input value="${l.name}" placeholder="Nazwisko"
-        onchange="lifters[${id}].name=this.value;saveAll();renderPlatform()">
-
-        <input value="${l.club}" placeholder="Klub"
-        onchange="lifters[${id}].club=this.value;saveAll();renderPlatform()">
-
-        <input value="${l.category}" placeholder="Kat."
-        onchange="lifters[${id}].category=this.value;saveAll();renderPlatform()">
-
-        <input value="${l.record}" placeholder="Rekord"
-        onchange="lifters[${id}].record=this.value;saveAll();renderPlatform()"><br>
+        <input placeholder="Nazwisko"
+        onchange="lifters[${id}].name=this.value">
 
         ${renderAttempt(id,0)}
         ${renderAttempt(id,1)}
@@ -190,33 +105,18 @@ function init(){
 
 // ===== PRÓBY =====
 function renderAttempt(id,n){
-  let a=lifters[id].attempts[n];
-
   return `
-    <input value="${a.weight}" placeholder="${n+1}"
-    oninput="setAttempt(${id},${n},this.value)">
+    <input placeholder="${n+1}"
+    oninput="lifters[${id}].attempts[${n}].weight=this.value">
 
-    <button class="${a.ok===true?'ok':''}"
-    onclick="setResult(${id},${n},true)">✔</button>
-
-    <button class="${a.ok===false?'fail':''}"
-    onclick="setResult(${id},${n},false)">❌</button>
+    <button onclick="lifters[${id}].attempts[${n}].ok=true">✔</button>
+    <button onclick="lifters[${id}].attempts[${n}].ok=false">❌</button>
   `;
 }
 
-function setAttempt(id,n,val){
-  lifters[id].attempts[n].weight=val;
-  saveAll();
-  renderPlatform();
-}
-
-function setResult(id,n,res){
-  lifters[id].attempts[n].ok=res;
-  saveAll();
-  init();
-}
-
 // ===== KOLEJKA =====
+function toNum(v){return parseFloat(v)||0;}
+
 function getQueue(){
   return lifters
     .filter(l=>l.group===currentGroup && l.attempts[currentRound].weight)
@@ -240,18 +140,12 @@ function renderPlatform(){
 
   document.getElementById("platform").innerHTML=`
     <h2>${l.name}</h2>
-    <h3>${l.club}</h3>
-    <h3>${l.category}</h3>
     <h1>${l.attempts[currentRound].weight} kg</h1>
     <div class="timer">CZAS: ${timer}s</div>
-    <h3>REKORD: ${l.record}</h3>
   `;
 
   localStorage.setItem("live", JSON.stringify({
     name:l.name,
-    club:l.club,
-    category:l.category,
-    record:l.record,
     weight:l.attempts[currentRound].weight,
     nextName:next?next.name:"",
     nextWeight:next?next.attempts[currentRound].weight:""
@@ -271,25 +165,19 @@ function nextMove(){
       currentRound++;
       currentIndex=0;
     } else {
-      if(currentGroup<groups.length-1){
-        currentGroup++;
-        currentRound=0;
-        currentIndex=0;
-      } else {
-        document.getElementById("platform").innerHTML="<h2>KONIEC</h2>";
-        return;
-      }
+      currentGroup++;
+      currentRound=0;
+      currentIndex=0;
     }
   }
 
-  saveAll();
-  startTimer(); // 🔥 start 0→60
+  startTimer();
   renderPlatform();
 }
 
 // ===== TV =====
 function openTV(){
-  window.open("./tv.html","_blank");
+  window.open("tv.html","_blank");
 }
 
 init();
