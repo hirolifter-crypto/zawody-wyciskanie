@@ -2,85 +2,236 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody</title>
+<title>Zawody PRO</title>
 
 <style>
-body {
-  background:#111;
-  color:#fff;
-  font-family:Arial;
-  text-align:center;
-}
-
-input {
-  margin:5px;
-  padding:10px;
-  font-size:16px;
-}
-
-button {
-  padding:10px;
-  margin:5px;
-}
-
-.timer {
-  font-size:40px;
-  color:cyan;
-}
+body { background:#111; color:#fff; font-family:Arial; text-align:center; }
+.container { display:flex; flex-wrap:wrap; justify-content:center; }
+.group { border:1px solid #444; margin:10px; padding:10px; width:420px; }
+input { margin:2px; padding:5px; width:70px; }
+button { margin:3px; padding:8px; }
+.ok { background:green; }
+.fail { background:red; }
+.timer { font-size:32px; color:cyan; }
 </style>
 </head>
 
 <body>
 
-<h1>PANEL</h1>
+<h1>PANEL SĘDZIOWSKI</h1>
 
-<input id="name" placeholder="Zawodnik"><br>
-<input id="club" placeholder="Klub"><br>
-<input id="weight" placeholder="Ciężar"><br>
-
-<h2 class="timer" id="timer">0</h2>
-
-<button onclick="start()">START</button>
-<button onclick="next()">NASTĘPNY</button>
 <button onclick="openTV()">📺 TV</button>
+<button onclick="exportData()">💾 ZAPISZ</button>
+<input type="file" onchange="importData(event)">
+<button onclick="resetAll()">🗑 RESET</button>
+
+<div class="container" id="groups"></div>
+
+<h2>Pomost</h2>
+<div id="platform"></div>
+
+<button onclick="nextMove()">➡️ Następny</button>
 
 <script>
+
+let lifters = [];
+let currentIndex = 0;
+let currentRound = 0;
 
 let timer = 0;
 let interval = null;
 
-function start(){
+// ===== TIMER =====
+function startTimer(){
   clearInterval(interval);
   timer = 0;
 
   interval = setInterval(()=>{
     timer++;
-    update();
+    localStorage.setItem("timer", JSON.stringify({value:timer}));
+    renderPlatform();
     if(timer>=60) clearInterval(interval);
   },1000);
 }
 
-function next(){
-  start();
+// ===== SAVE =====
+function save(){
+  localStorage.setItem("data", JSON.stringify({
+    lifters,currentIndex,currentRound
+  }));
 }
 
-function update(){
-  let data = {
-    name: document.getElementById("name").value,
-    club: document.getElementById("club").value,
-    weight: document.getElementById("weight").value,
-    timer: timer
+function load(){
+  let d = JSON.parse(localStorage.getItem("data"));
+  if(d){
+    lifters = d.lifters || [];
+    currentIndex = d.currentIndex || 0;
+    currentRound = d.currentRound || 0;
+  }
+}
+
+// ===== BACKUP =====
+function exportData(){
+  let blob = new Blob([JSON.stringify({
+    lifters,currentIndex,currentRound
+  })],{type:"application/json"});
+
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "backup.json";
+  a.click();
+}
+
+function importData(e){
+  let r = new FileReader();
+  r.onload = function(){
+    let d = JSON.parse(r.result);
+    lifters = d.lifters || [];
+    currentIndex = d.currentIndex || 0;
+    currentRound = d.currentRound || 0;
+    save();
+    location.reload();
   };
-
-  localStorage.setItem("live", JSON.stringify(data));
+  r.readAsText(e.target.files[0]);
 }
 
+function resetAll(){
+  localStorage.clear();
+  location.reload();
+}
+
+// ===== INIT =====
+function init(){
+
+  load();
+
+  let c = document.getElementById("groups");
+  c.innerHTML = "";
+
+  if(lifters.length === 0){
+    for(let i=0;i<20;i++){
+      lifters.push({
+        name:"",
+        club:"",
+        attempts:[
+          {w:"",ok:null},
+          {w:"",ok:null},
+          {w:"",ok:null}
+        ]
+      });
+    }
+  }
+
+  lifters.forEach((l,i)=>{
+    c.innerHTML += `
+      <div class="group">
+        <input value="${l.name}" placeholder="Zawodnik"
+        onchange="lifters[${i}].name=this.value;save();renderPlatform()">
+
+        <input value="${l.club}" placeholder="Klub"
+        onchange="lifters[${i}].club=this.value;save();renderPlatform()"><br>
+
+        ${attemptUI(i,0)}
+        ${attemptUI(i,1)}
+        ${attemptUI(i,2)}
+      </div>
+    `;
+  });
+
+  renderPlatform();
+}
+
+// ===== PRÓBY =====
+function attemptUI(i,n){
+  let a = lifters[i].attempts[n];
+  return `
+    <input value="${a.w}" placeholder="${n+1}"
+    oninput="setW(${i},${n},this.value)">
+    <button class="${a.ok===true?'ok':''}" onclick="setR(${i},${n},true)">✔</button>
+    <button class="${a.ok===false?'fail':''}" onclick="setR(${i},${n},false)">❌</button>
+  `;
+}
+
+function setW(i,n,v){
+  lifters[i].attempts[n].w = v;
+  save();
+  renderPlatform();
+}
+
+function setR(i,n,r){
+  lifters[i].attempts[n].ok = r;
+  save();
+  init();
+}
+
+// ===== KOLEJKA =====
+function toNum(v){return parseFloat(v)||0;}
+
+function queue(){
+  return lifters
+    .filter(l=>l.attempts[currentRound].w)
+    .sort((a,b)=>toNum(a.attempts[currentRound].w)-toNum(b.attempts[currentRound].w));
+}
+
+// ===== PLATFORM =====
+function renderPlatform(){
+
+  let q = queue();
+
+  if(!q.length){
+    document.getElementById("platform").innerHTML="Wpisz ciężary";
+    return;
+  }
+
+  if(currentIndex>=q.length) currentIndex=0;
+
+  let l = q[currentIndex];
+  let next = q[currentIndex+1];
+
+  document.getElementById("platform").innerHTML=`
+    <h2>${l.name}</h2>
+    <h3>${l.club}</h3>
+    <h1>${l.attempts[currentRound].w} kg</h1>
+    <div class="timer">${timer}s</div>
+  `;
+
+  localStorage.setItem("live", JSON.stringify({
+    name:l.name,
+    club:l.club,
+    weight:l.attempts[currentRound].w,
+    next: next ? next.name : ""
+  }));
+}
+
+// ===== NEXT =====
+function nextMove(){
+
+  let q = queue();
+  if(!q.length) return;
+
+  if(currentIndex < q.length-1){
+    currentIndex++;
+  } else {
+    if(currentRound < 2){
+      currentRound++;
+      currentIndex=0;
+    } else {
+      currentRound=0;
+      currentIndex=0;
+    }
+  }
+
+  save();
+  startTimer();
+  renderPlatform();
+}
+
+// ===== TV =====
 function openTV(){
   window.open("tv.html","_blank");
 }
 
-// 🔥 NIE MA AUTO STARTU
-// 🔥 NIE MA AUTO TV
+init();
 
 </script>
 
