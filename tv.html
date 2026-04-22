@@ -37,6 +37,10 @@ body {background:black;color:white;text-align:center;font-family:Arial;margin:0;
 
 <script>
 
+function toNum(val){
+  return parseFloat((val || "").toString().replace(",", ".")) || 0;
+}
+
 function update(){
 
   let data = JSON.parse(localStorage.getItem("live"));
@@ -44,33 +48,27 @@ function update(){
 
   if(!data) return;
 
-  document.getElementById("current").innerText = data.name||"";
-  document.getElementById("club").innerText = data.club||"";
-  document.getElementById("category").innerText = data.category||"";
-  document.getElementById("weight").innerText = (data.weight||"")+" kg";
+  document.getElementById("current").innerText=data.name||"";
+  document.getElementById("club").innerText=data.club||"";
+  document.getElementById("category").innerText=data.category||"";
+  document.getElementById("weight").innerText=(data.weight||"")+" kg";
 
-  let t = tData ? tData.value : "";
-  document.getElementById("timer").innerText = "CZAS: "+t+"s";
+  let t=tData?tData.value:"";
+  document.getElementById("timer").innerText="CZAS: "+t+"s";
 
   document.getElementById("record").innerText =
     data.record ? "REKORD: "+data.record+" kg" : "";
 
-  // 💥 NOWY REKORD
-  let rec = parseFloat(data.record)||0;
-  let w = parseFloat(data.weight)||0;
+  let rec = toNum(data.record);
+  let w = toNum(data.weight);
 
-  if(rec>0 && w>=rec){
-    document.getElementById("newrecord").innerText="NOWY REKORD!";
-  } else {
-    document.getElementById("newrecord").innerText="";
-  }
+  document.getElementById("newrecord").innerText =
+    (rec>0 && w>rec) ? "NOWY REKORD!" : "";
 
-  let nextText="";
-  if(data.nextName && data.nextWeight){
-    nextText="W KOLEJCE: "+data.nextName+" ("+data.nextWeight+" kg)";
-  }
-
-  document.getElementById("next").innerText=nextText;
+  document.getElementById("next").innerText =
+    (data.nextName && data.nextWeight)
+      ? "W KOLEJCE: "+data.nextName+" ("+data.nextWeight+" kg)"
+      : "";
 }
 
 setInterval(update,200);
