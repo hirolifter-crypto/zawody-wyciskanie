@@ -14,6 +14,7 @@ body {background:black;color:white;text-align:center;font-family:Arial;margin:0;
 #weight{font-size:14vh;color:red;}
 #timer{font-size:10vh;color:cyan;}
 #record{font-size:4vh;color:orange;}
+#newrecord{font-size:6vh;color:lime;font-weight:bold;}
 #next{font-size:4vh;margin-top:4vh;}
 </style>
 </head>
@@ -29,7 +30,9 @@ body {background:black;color:white;text-align:center;font-family:Arial;margin:0;
 <div id="weight"></div>
 <div id="timer"></div>
 <div id="record"></div>
+<div id="newrecord"></div>
 <div id="next"></div>
+
 </div>
 
 <script>
@@ -41,22 +44,33 @@ function update(){
 
   if(!data) return;
 
-  document.getElementById("current").innerText = data.name || "";
-  document.getElementById("club").innerText = data.club || "";
-  document.getElementById("category").innerText = data.category || "";
-  document.getElementById("weight").innerText = (data.weight || "") + " kg";
+  document.getElementById("current").innerText = data.name||"";
+  document.getElementById("club").innerText = data.club||"";
+  document.getElementById("category").innerText = data.category||"";
+  document.getElementById("weight").innerText = (data.weight||"")+" kg";
 
   let t = tData ? tData.value : "";
-  document.getElementById("timer").innerText = "CZAS: " + t + "s";
+  document.getElementById("timer").innerText = "CZAS: "+t+"s";
 
   document.getElementById("record").innerText =
-    data.record ? "REKORD: " + data.record + " kg" : "";
+    data.record ? "REKORD: "+data.record+" kg" : "";
 
-  let nextText = "";
-  if(data.nextName && data.nextWeight){
-    nextText = "W KOLEJCE: " + data.nextName + " (" + data.nextWeight + " kg)";
+  // 💥 NOWY REKORD
+  let rec = parseFloat(data.record)||0;
+  let w = parseFloat(data.weight)||0;
+
+  if(rec>0 && w>=rec){
+    document.getElementById("newrecord").innerText="NOWY REKORD!";
+  } else {
+    document.getElementById("newrecord").innerText="";
   }
-  document.getElementById("next").innerText = nextText;
+
+  let nextText="";
+  if(data.nextName && data.nextWeight){
+    nextText="W KOLEJCE: "+data.nextName+" ("+data.nextWeight+" kg)";
+  }
+
+  document.getElementById("next").innerText=nextText;
 }
 
 setInterval(update,200);
