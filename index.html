@@ -2,185 +2,59 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody FINAL</title>
+<title>TV</title>
 
 <style>
-body { font-family: Arial; background:#111; color:#fff; text-align:center; }
-.container { display:flex; flex-wrap:wrap; justify-content:center; }
-.group { border:1px solid #444; margin:10px; padding:10px; width:420px; }
-input { margin:2px; padding:5px; width:65px; }
-button { margin:3px; padding:8px; }
-.ok { background:green; }
-.fail { background:red; }
-.timer { font-size:36px; color:cyan; }
+body {
+  background:black;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+}
+
+#name{font-size:10vh;color:yellow;}
+#weight{font-size:14vh;color:red;}
+#timer{font-size:10vh;color:cyan;}
+#next{font-size:5vh;color:lightblue;}
 </style>
 </head>
 
 <body>
 
-<h1>PANEL SĘDZIOWSKI</h1>
+<h1>NA POMOŚCIE</h1>
 
-<button onclick="openTV()">📺 TV</button>
-
-<div class="container" id="groups"></div>
-
-<h2>Pomost</h2>
-<div id="platform"></div>
-
-<button onclick="nextMove()">➡️ Następny ruch</button>
+<div id="name"></div>
+<div id="weight"></div>
+<div id="timer"></div>
+<div id="next"></div>
 
 <script>
 
-let groups=[10,10,10,12];
-let lifters=[];
+function update(){
 
-let currentGroup=0;
-let currentIndex=0;
-let currentRound=0;
+  let data = JSON.parse(localStorage.getItem("live"));
+  let tData = JSON.parse(localStorage.getItem("timer"));
 
-let timer=0;
-let timerInterval=null;
+  if(!data) return;
 
-// ===== TIMER =====
-function startTimer(){
-  clearInterval(timerInterval);
-  timer = 0;
+  document.getElementById("name").innerText = data.name || "";
+  document.getElementById("weight").innerText = (data.weight||"")+" kg";
 
-  timerInterval = setInterval(()=>{
-    timer++;
+  // 🔥 TIMER DZIAŁA
+  let t = tData ? tData.value : 0;
+  document.getElementById("timer").innerText = "CZAS: " + t + "s";
 
-    localStorage.setItem("timer", JSON.stringify({
-      value: timer,
-      time: Date.now()
-    }));
-
-    renderPlatform();
-
-    if(timer>=60){
-      clearInterval(timerInterval);
-    }
-
-  },1000);
+  document.getElementById("next").innerText =
+    data.nextName ? "W KOLEJCE: "+data.nextName : "";
 }
 
-// ===== INIT =====
-function init(){
-  let c=document.getElementById("groups");
-  let id=0;
+// 🔥 LIVE
+window.addEventListener("storage", update);
 
-  groups.forEach((size,g)=>{
-    let div=document.createElement("div");
-    div.className="group";
-    div.innerHTML="<h3>Grupa "+(g+1)+"</h3>";
+// 🔥 backup
+setInterval(update,200);
 
-    for(let i=0;i<size;i++){
-
-      lifters.push({
-        group:g,name:"",
-        attempts:[
-          {weight:"",ok:null},
-          {weight:"",ok:null},
-          {weight:"",ok:null}
-        ]
-      });
-
-      div.innerHTML+=`
-        <input placeholder="Nazwisko"
-        onchange="lifters[${id}].name=this.value">
-
-        ${renderAttempt(id,0)}
-        ${renderAttempt(id,1)}
-        ${renderAttempt(id,2)}
-        <br>
-      `;
-
-      id++;
-    }
-
-    c.appendChild(div);
-  });
-
-  renderPlatform();
-}
-
-// ===== PRÓBY =====
-function renderAttempt(id,n){
-  return `
-    <input placeholder="${n+1}"
-    oninput="lifters[${id}].attempts[${n}].weight=this.value">
-
-    <button onclick="lifters[${id}].attempts[${n}].ok=true">✔</button>
-    <button onclick="lifters[${id}].attempts[${n}].ok=false">❌</button>
-  `;
-}
-
-// ===== KOLEJKA =====
-function toNum(v){return parseFloat(v)||0;}
-
-function getQueue(){
-  return lifters
-    .filter(l=>l.group===currentGroup && l.attempts[currentRound].weight)
-    .sort((a,b)=>toNum(a.attempts[currentRound].weight)-toNum(b.attempts[currentRound].weight));
-}
-
-// ===== PLATFORM =====
-function renderPlatform(){
-
-  let q=getQueue();
-
-  if(!q.length){
-    document.getElementById("platform").innerHTML="Wpisz ciężary";
-    return;
-  }
-
-  if(currentIndex>=q.length) currentIndex=0;
-
-  let l=q[currentIndex];
-  let next=(currentIndex+1<q.length)?q[currentIndex+1]:null;
-
-  document.getElementById("platform").innerHTML=`
-    <h2>${l.name}</h2>
-    <h1>${l.attempts[currentRound].weight} kg</h1>
-    <div class="timer">CZAS: ${timer}s</div>
-  `;
-
-  localStorage.setItem("live", JSON.stringify({
-    name:l.name,
-    weight:l.attempts[currentRound].weight,
-    nextName:next?next.name:"",
-    nextWeight:next?next.attempts[currentRound].weight:""
-  }));
-}
-
-// ===== NEXT =====
-function nextMove(){
-
-  let q=getQueue();
-  if(!q.length) return;
-
-  if(currentIndex<q.length-1){
-    currentIndex++;
-  } else {
-    if(currentRound<2){
-      currentRound++;
-      currentIndex=0;
-    } else {
-      currentGroup++;
-      currentRound=0;
-      currentIndex=0;
-    }
-  }
-
-  startTimer();
-  renderPlatform();
-}
-
-// ===== TV =====
-function openTV(){
-  window.open("tv.html","_blank");
-}
-
-init();
+update();
 
 </script>
 
