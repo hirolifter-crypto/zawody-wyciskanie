@@ -2,231 +2,113 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody FINAL SHOW</title>
+<title>TV</title>
 
 <style>
-body { font-family: Arial; background:#111; color:#fff; text-align:center; }
-.container { display:flex; flex-wrap:wrap; justify-content:center; }
-.group { border:1px solid #444; margin:10px; padding:10px; width:380px; }
-input { margin:2px; padding:5px; width:80px; }
-button { margin:5px; padding:12px; font-size:16px; }
-h2 { color:yellow; }
-.timer { color:cyan; font-size:28px; }
-table { width:90%; margin:auto; border-collapse:collapse; }
-td, th { border:1px solid #555; padding:6px; }
+body {
+  background:black;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+  margin:0;
+}
+
+.container{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+#current{font-size:10vh;color:yellow;}
+#club{font-size:4vh;}
+#category{font-size:4vh;}
+#weight{font-size:14vh;color:red;}
+#timer{font-size:10vh;color:cyan;}
+#record{font-size:4vh;color:orange;}
+#newrecord{
+  font-size:8vh;
+  color:lime;
+  font-weight:bold;
+}
+#next{font-size:4vh;margin-top:4vh;}
+
+/* 🔥 ANIMACJA */
+@keyframes pulseRecord {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(1.3); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pulse {
+  animation: pulseRecord 0.8s infinite;
+}
 </style>
 </head>
 
 <body>
 
-<h1>PANEL SĘDZIOWSKI</h1>
+<div class="container">
+<h1>NA POMOŚCIE</h1>
 
-<button onclick="openTV()">📺 TV</button>
-<button onclick="showResults()">📊 WYNIKI</button>
+<div id="current"></div>
+<div id="club"></div>
+<div id="category"></div>
+<div id="weight"></div>
+<div id="timer"></div>
+<div id="record"></div>
+<div id="newrecord"></div>
+<div id="next"></div>
 
-<div class="container" id="groups"></div>
-
-<h2>Pomost</h2>
-<div id="platform"></div>
-
-<button onclick="nextMove()">➡️ Następny ruch</button>
-
-<div id="results"></div>
+</div>
 
 <script>
 
-let groups = [10,10,10,12];
-let lifters = [];
-
-let currentGroup = 0;
-let currentIndex = 0;
-let currentRound = 0;
-
-let timer = 60;
-let timerInterval = null;
-
-// 🔥 zamiana na liczbę (obsługa 120,5)
 function toNum(val){
   return parseFloat((val || "").toString().replace(",", ".")) || 0;
 }
 
-function startTimer(){
-  clearInterval(timerInterval);
-  timer = 60;
+function update(){
 
-  timerInterval = setInterval(()=>{
-    timer--;
+  let data = JSON.parse(localStorage.getItem("live"));
+  let tData = JSON.parse(localStorage.getItem("timer"));
 
-    localStorage.setItem("timer", JSON.stringify({
-      value: timer,
-      time: Date.now()
-    }));
+  if(!data) return;
 
-    renderPlatform();
+  document.getElementById("current").innerText = data.name || "";
+  document.getElementById("club").innerText = data.club || "";
+  document.getElementById("category").innerText = data.category || "";
+  document.getElementById("weight").innerText = (data.weight || "") + " kg";
 
-    if(timer<=0) clearInterval(timerInterval);
-  },1000);
-}
+  let t = tData ? tData.value : "";
+  document.getElementById("timer").innerText = "CZAS: " + t + "s";
 
-function bestLift(l){
-  return Math.max(...l.attempts.map(x=>toNum(x)));
-}
+  document.getElementById("record").innerText =
+    data.record ? "REKORD: " + data.record + " kg" : "";
 
-function recordImprovement(l){
-  return bestLift(l) - toNum(l.record);
-}
+  // 💥 NOWY REKORD + PULSACJA
+  let rec = toNum(data.record);
+  let w = toNum(data.weight);
 
-function init(){
-  let container=document.getElementById("groups");
-  let id=0;
+  let nr = document.getElementById("newrecord");
 
-  groups.forEach((size,g)=>{
-    let div=document.createElement("div");
-    div.className="group";
-    div.innerHTML="<h3>Grupa "+(g+1)+"</h3>";
-
-    for(let i=0;i<size;i++){
-      lifters.push({
-        group:g,name:"",club:"",
-        category:"",record:"",
-        attempts:["","",""]
-      });
-
-      div.innerHTML+=`
-        <input placeholder="Nazwisko" onchange="lifters[${id}].name=this.value">
-        <input placeholder="Klub" onchange="lifters[${id}].club=this.value">
-        <input placeholder="Kat." onchange="lifters[${id}].category=this.value">
-        <input placeholder="Rekord" onchange="lifters[${id}].record=this.value"><br>
-
-        <input placeholder="1" oninput="updateAttempt(${id},0,this.value)">
-        <input placeholder="2" oninput="updateAttempt(${id},1,this.value)">
-        <input placeholder="3" oninput="updateAttempt(${id},2,this.value)">
-        <br>
-      `;
-      id++;
-    }
-
-    container.appendChild(div);
-  });
-
-  renderPlatform();
-}
-
-function updateAttempt(id,n,val){
-  lifters[id].attempts[n]=val.trim();
-  currentIndex=0;
-  renderPlatform();
-}
-
-function getQueue(){
-  return lifters
-    .filter(l=>l.group===currentGroup && l.attempts[currentRound])
-    .sort((a,b)=>toNum(a.attempts[currentRound]) - toNum(b.attempts[currentRound]));
-}
-
-function renderPlatform(){
-
-  let q=getQueue();
-
-  if(!q.length){
-    document.getElementById("platform").innerHTML="<h2>Wpisz ciężary</h2>";
-    return;
-  }
-
-  if(currentIndex>=q.length) currentIndex=0;
-
-  let l=q[currentIndex];
-  let next=(currentIndex+1<q.length)?q[currentIndex+1]:null;
-
-  document.getElementById("platform").innerHTML=`
-    <h2>${l.name}</h2>
-    <h3>${l.club}</h3>
-    <h3>${l.category}</h3>
-    <h1>${l.attempts[currentRound]} kg</h1>
-    <div class="timer">CZAS: ${timer}s</div>
-    <h3>REKORD: ${l.record || "-"}</h3>
-  `;
-
-  localStorage.setItem("live", JSON.stringify({
-    name:l.name,
-    club:l.club,
-    category:l.category,
-    record:l.record,
-    weight:l.attempts[currentRound],
-    nextName:next?next.name:"",
-    nextWeight:next?next.attempts[currentRound]:"",
-    time:Date.now()
-  }));
-}
-
-function nextMove(){
-
-  let q=getQueue();
-  if(!q.length) return;
-
-  if(currentIndex<q.length-1){
-    currentIndex++;
+  if(rec > 0 && w > rec){
+    nr.innerText = "NOWY REKORD!";
+    nr.classList.add("pulse");
   } else {
-    if(currentRound<2){
-      currentRound++;
-      currentIndex=0;
-    } else {
-      if(currentGroup<groups.length-1){
-        currentGroup++;
-        currentRound=0;
-        currentIndex=0;
-      } else {
-        document.getElementById("platform").innerHTML="<h2>KONIEC</h2>";
-        return;
-      }
-    }
+    nr.innerText = "";
+    nr.classList.remove("pulse");
   }
 
-  startTimer();
-  renderPlatform();
+  document.getElementById("next").innerText =
+    (data.nextName && data.nextWeight)
+      ? "W KOLEJCE: " + data.nextName + " (" + data.nextWeight + " kg)"
+      : "";
 }
 
-function showResults(){
-
-  let results = lifters.map(l=>{
-    let best = bestLift(l);
-    let rec = toNum(l.record);
-    let improve = best - rec;
-    let newRecord = best > rec;
-
-    return {...l, best, improve, newRecord};
-  }).filter(l=>l.best>0);
-
-  results.sort((a,b)=>b.improve - a.improve);
-
-  let html="<h2>WYNIKI (POPRAWA REKORDU)</h2>";
-  html+="<table><tr><th>#</th><th>Nazwisko</th><th>Kat.</th><th>Kg</th><th>Rekord</th><th>+/-</th><th>Rekord?</th></tr>";
-
-  results.forEach((l,i)=>{
-
-    let color = l.improve>=0 ? "lightgreen" : "red";
-
-    html+=`<tr>
-      <td>${i+1}</td>
-      <td>${l.name}</td>
-      <td>${l.category}</td>
-      <td>${l.best}</td>
-      <td>${l.record}</td>
-      <td style="color:${color}">${l.improve>=0?"+":""}${l.improve}</td>
-      <td style="color:lime">${l.newRecord?"TAK":"-"}</td>
-    </tr>`;
-  });
-
-  html+="</table>";
-
-  document.getElementById("results").innerHTML = html;
-}
-
-function openTV(){
-  window.open("tv.html","_blank");
-}
-
-init();
+setInterval(update,200);
+update();
 
 </script>
 
