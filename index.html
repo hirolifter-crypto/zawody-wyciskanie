@@ -2,19 +2,17 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody FINAL PRO</title>
+<title>Zawody FINAL</title>
 
 <style>
 body { font-family: Arial; background:#111; color:#fff; text-align:center; }
 .container { display:flex; flex-wrap:wrap; justify-content:center; }
 .group { border:1px solid #444; margin:10px; padding:10px; width:420px; }
 input { margin:2px; padding:5px; width:65px; }
-button { margin:3px; padding:8px; font-size:14px; }
+button { margin:3px; padding:8px; }
 .ok { background:green; }
 .fail { background:red; }
-.timer { color:cyan; font-size:28px; }
-table { width:90%; margin:auto; border-collapse:collapse; }
-td, th { border:1px solid #555; padding:6px; }
+.timer { font-size:32px; color:cyan; }
 </style>
 </head>
 
@@ -46,11 +44,34 @@ let currentGroup=0;
 let currentIndex=0;
 let currentRound=0;
 
-let timer=60;
+let timer=0;
 let timerInterval=null;
 
+// ===== POMOC =====
 function toNum(v){
-  return parseFloat((v||"").toString().replace(",", "."))||0;
+  return parseFloat((v||"").replace(",", "."))||0;
+}
+
+// ===== TIMER 0 → 60 =====
+function startTimer(){
+  clearInterval(timerInterval);
+  timer = 0;
+
+  timerInterval = setInterval(()=>{
+    timer++;
+
+    localStorage.setItem("timer", JSON.stringify({
+      value: timer,
+      time: Date.now()
+    }));
+
+    renderPlatform();
+
+    if(timer >= 60){
+      clearInterval(timerInterval);
+    }
+
+  },1000);
 }
 
 // ===== SAVE =====
@@ -102,18 +123,6 @@ function importData(e){
     location.reload();
   };
   reader.readAsText(e.target.files[0]);
-}
-
-// ===== TIMER =====
-function startTimer(){
-  clearInterval(timerInterval);
-  timer=60;
-  timerInterval=setInterval(()=>{
-    timer--;
-    localStorage.setItem("timer", JSON.stringify({value:timer}));
-    renderPlatform();
-    if(timer<=0) clearInterval(timerInterval);
-  },1000);
 }
 
 // ===== BEST =====
@@ -234,11 +243,10 @@ function renderPlatform(){
     <h3>${l.club}</h3>
     <h3>${l.category}</h3>
     <h1>${l.attempts[currentRound].weight} kg</h1>
-    <div class="timer">${timer}s</div>
+    <div class="timer">CZAS: ${timer}s</div>
     <h3>REKORD: ${l.record}</h3>
   `;
 
-  // 🔥 LIVE SYNC
   localStorage.setItem("live", JSON.stringify({
     name:l.name,
     club:l.club,
@@ -246,8 +254,7 @@ function renderPlatform(){
     record:l.record,
     weight:l.attempts[currentRound].weight,
     nextName:next?next.name:"",
-    nextWeight:next?next.attempts[currentRound].weight:"",
-    time:Date.now()
+    nextWeight:next?next.attempts[currentRound].weight:""
   }));
 }
 
@@ -276,36 +283,8 @@ function nextMove(){
   }
 
   saveAll();
-  startTimer();
+  startTimer(); // 🔥 start 0→60
   renderPlatform();
-}
-
-// ===== WYNIKI =====
-function showResults(){
-
-  let res=lifters.map(l=>{
-    let best=bestLift(l);
-    let rec=toNum(l.record);
-    return {...l,best,improve:best-rec,newRec:best>rec};
-  }).filter(l=>l.best>0);
-
-  res.sort((a,b)=>b.improve-a.improve);
-
-  let html="<h2>WYNIKI</h2><table>";
-  html+="<tr><th>#</th><th>Nazwisko</th><th>Kg</th><th>+/-</th><th>Rekord</th></tr>";
-
-  res.forEach((l,i)=>{
-    html+=`<tr>
-      <td>${i+1}</td>
-      <td>${l.name}</td>
-      <td>${l.best}</td>
-      <td>${l.improve>=0?"+":""}${l.improve}</td>
-      <td>${l.newRec?"TAK":""}</td>
-    </tr>`;
-  });
-
-  html+="</table>";
-  document.getElementById("results").innerHTML=html;
 }
 
 // ===== TV =====
