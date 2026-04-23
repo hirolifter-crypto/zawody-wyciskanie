@@ -10,12 +10,12 @@ body { background:#111; color:#fff; font-family:Arial; text-align:center; }
 .group { border:1px solid #444; margin:10px; padding:10px; width:420px; }
 
 input { margin:2px; padding:5px; width:70px; }
-button { margin:2px; padding:6px; font-size:14px; }
+button { margin:2px; padding:6px; }
 
 .ok { background:green; }
 .fail { background:red; }
 
-.timer { font-size:32px; color:cyan; }
+.timer { font-size:32px; }
 </style>
 </head>
 
@@ -41,19 +41,25 @@ let lifters = [];
 let currentIndex = 0;
 let currentRound = 0;
 
-let timer = 0;
+let timer = 60;
 let interval = null;
 
-// ===== TIMER =====
+// ===== TIMER 60 → 0 =====
 function startTimer(){
   clearInterval(interval);
-  timer = 0;
+  timer = 60;
 
   interval = setInterval(()=>{
-    timer++;
+    timer--;
+
     localStorage.setItem("timer", JSON.stringify({value:timer}));
+
     renderPlatform();
-    if(timer>=60) clearInterval(interval);
+
+    if(timer <= 0){
+      clearInterval(interval);
+    }
+
   },1000);
 }
 
@@ -196,11 +202,16 @@ function renderPlatform(){
   let l = q[currentIndex];
   let next = q[currentIndex+1];
 
+  // 🔥 KOLOR TIMERA
+  let color = "white";
+  if(timer <= 20) color = "red";
+  else if(timer <= 40) color = "yellow";
+
   document.getElementById("platform").innerHTML=`
     <h2>${l.name}</h2>
     <h3>${l.club}</h3>
     <h1>${l.attempts[currentRound].w} kg</h1>
-    <div class="timer">${timer}s</div>
+    <div class="timer" style="color:${color}">${timer}s</div>
   `;
 
   localStorage.setItem("live", JSON.stringify({
@@ -230,7 +241,7 @@ function nextMove(){
   }
 
   save();
-  startTimer();
+  startTimer(); // 🔥 start 60→0
   renderPlatform();
 }
 
