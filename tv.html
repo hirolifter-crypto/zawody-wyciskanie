@@ -128,18 +128,18 @@ function update(){
     clearTimeout(recordTimeout);
   }
 
-  // NOWY REKORD
+  // 🔥 NOWY REKORD (zielony)
   if(d.record){
     rec.innerText = "🔥 NOWY REKORD!";
-    rec.style.color = "red";
+    rec.style.color = "lime"; // ✅ ZIELONY
     rec.classList.add("recordOn");
 
     recordTimeout = setTimeout(()=>{
       rec.classList.remove("recordOn");
-    },10000); // 🔥 10 sekund
+    },10000);
   }
 
-  // PRÓBA NA REKORD
+  // 🔥 PRÓBA NA REKORD (złota)
   else if(d.attemptRecord){
     rec.innerText = "PRÓBA NA REKORD";
     rec.style.color = "gold";
