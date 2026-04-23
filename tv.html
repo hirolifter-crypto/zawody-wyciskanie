@@ -2,55 +2,61 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>TV PRO MAX</title>
+<title>TV PRO</title>
 
 <style>
 body {
   background:black;
   color:white;
-  text-align:center;
   font-family:Arial;
   margin:0;
   overflow:hidden;
+
+  /* 🔥 wyśrodkowanie + niżej */
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  height:100vh;
 }
 
-/* 🔥 NAZWA – bardzo duża */
+/* kontener całego widoku */
+#container {
+  text-align:center;
+  margin-top:8vh; /* 🔥 REGULUJESZ TUTAJ */
+}
+
+/* NAZWA */
 #name {
-  font-size:16vh;
+  font-size:12vh;
   color:yellow;
   font-weight:bold;
-  margin-top:2vh;
 }
 
 /* klub */
 #club {
-  font-size:6vh;
-  margin-bottom:2vh;
+  font-size:5vh;
 }
 
-/* 🔥 CIĘŻAR – OGROMNY */
+/* ciężar */
 #weight {
-  font-size:28vh;
+  font-size:20vh;
   color:red;
   font-weight:bold;
-  line-height:1;
 }
 
 /* BEST */
 #best {
-  font-size:6vh;
+  font-size:5vh;
   color:gold;
-  margin-top:2vh;
 }
 
-/* 🔥 TIMER */
+/* timer */
 #timer {
-  font-size:18vh;
+  font-size:15vh;
   font-weight:bold;
-  margin-top:2vh;
 }
 
-/* kolejny zawodnik */
+/* kolejny */
 #next {
   position:absolute;
   bottom:2vh;
@@ -64,11 +70,14 @@ body {
 
 <body>
 
-<div id="name"></div>
-<div id="club"></div>
-<div id="weight"></div>
-<div id="best"></div>
-<div id="timer"></div>
+<div id="container">
+  <div id="name"></div>
+  <div id="club"></div>
+  <div id="weight"></div>
+  <div id="best"></div>
+  <div id="timer"></div>
+</div>
+
 <div id="next"></div>
 
 <script>
@@ -80,13 +89,11 @@ function update(){
 
   if(!d) return;
 
-  // dane
   document.getElementById("name").innerText = d.name || "";
   document.getElementById("club").innerText = d.club || "";
-  document.getElementById("weight").innerText = (d.weight||"") + " kg";
-  document.getElementById("best").innerText = "BEST: " + (d.best || 0) + " kg";
+  document.getElementById("weight").innerText = (d.weight||"")+" kg";
+  document.getElementById("best").innerText = "BEST: " + (d.best||0) + " kg";
 
-  // timer
   let time = t ? t.value : 60;
 
   let color = "white";
@@ -97,12 +104,10 @@ function update(){
   timerEl.innerText = time;
   timerEl.style.color = color;
 
-  // kolejny
   document.getElementById("next").innerText =
     d.next ? "W KOLEJCE: " + d.next : "";
 }
 
-// LIVE aktualizacja
 window.addEventListener("storage", update);
 setInterval(update,200);
 
