@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>EKRAN TV</title>
+<title>TV PRO</title>
 
 <style>
 body {
@@ -13,66 +13,49 @@ body {
   margin:0;
 }
 
-.container {
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-
-h1 { font-size:5vh; }
-
-#current { font-size:10vh; color:yellow; }
-#club { font-size:4vh; color:lightgray; }
-#weight { font-size:14vh; color:red; }
-#timer { font-size:10vh; color:cyan; }
-#next { margin-top:4vh; font-size:4vh; color:lightgray; }
+#name { font-size:12vh; color:yellow; }
+#club { font-size:5vh; }
+#weight { font-size:20vh; color:red; }
+#best { font-size:5vh; color:gold; }
+#timer { font-size:15vh; font-weight:bold; }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<h1>NA POMOŚCIE</h1>
-
-<div id="current">---</div>
+<div id="name"></div>
 <div id="club"></div>
-<div id="weight">---</div>
+<div id="weight"></div>
+<div id="best"></div>
 <div id="timer"></div>
-
-<div id="next"></div>
-
-</div>
 
 <script>
 
-function update() {
-  let data = JSON.parse(localStorage.getItem("live"));
-  let tData = JSON.parse(localStorage.getItem("timer"));
+function update(){
 
-  if (!data) return;
+  let d = JSON.parse(localStorage.getItem("live"));
+  let t = JSON.parse(localStorage.getItem("timer"));
 
-  document.getElementById("current").innerText = data.name || "---";
-  document.getElementById("club").innerText = data.club || "";
-  document.getElementById("weight").innerText =
-    (data.weight || "---") + " kg";
+  if(!d) return;
 
-  let t = tData ? tData.value : null;
+  document.getElementById("name").innerText = d.name || "";
+  document.getElementById("club").innerText = d.club || "";
+  document.getElementById("weight").innerText = (d.weight||"")+" kg";
+  document.getElementById("best").innerText = "BEST: " + (d.best||0);
 
-  document.getElementById("timer").innerText =
-    t !== null ? "CZAS: " + t + "s" : "";
+  let time = t ? t.value : 60;
 
-  if (data.nextName) {
-    document.getElementById("next").innerText =
-      "W KOLEJCE: " + data.nextName + " (" + data.nextWeight + " kg)";
-  } else {
-    document.getElementById("next").innerText = "";
-  }
+  let color = "white";
+  if(time <= 20) color = "red";
+  else if(time <= 40) color = "yellow";
+
+  document.getElementById("timer").innerText = time;
+  document.getElementById("timer").style.color = color;
 }
 
-setInterval(update, 200);
+window.addEventListener("storage", update);
+setInterval(update,200);
+
 update();
 
 </script>
