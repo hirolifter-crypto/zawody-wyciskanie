@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>TV PRO</title>
+<title>TV FIX</title>
 
 <style>
 body {
@@ -12,57 +12,47 @@ body {
   margin:0;
   overflow:hidden;
 
-  /* 🔥 wyśrodkowanie + niżej */
   display:flex;
   justify-content:center;
-  align-items:flex-start;
+  align-items:center; /* 🔥 środek pionowy */
   height:100vh;
 }
 
-/* kontener całego widoku */
-#container {
+/* 🔥 CAŁY BLOK */
+#wrap {
   text-align:center;
-  margin-top:8vh; /* 🔥 REGULUJESZ TUTAJ */
+  transform: translateY(5vh); /* 🔥 jeszcze niżej */
 }
 
-/* NAZWA */
+/* 🔥 NAZWA */
 #name {
-  font-size:12vh;
+  font-size:14vh;
   color:yellow;
   font-weight:bold;
 }
 
-/* klub */
+/* 🔥 KLUB */
 #club {
-  font-size:5vh;
+  font-size:6vh;
 }
 
-/* ciężar */
+/* 🔥 CIĘŻAR */
 #weight {
-  font-size:20vh;
+  font-size:26vh;
   color:red;
   font-weight:bold;
 }
 
 /* BEST */
 #best {
-  font-size:5vh;
+  font-size:6vh;
   color:gold;
 }
 
-/* timer */
+/* 🔥 TIMER */
 #timer {
-  font-size:15vh;
+  font-size:18vh;
   font-weight:bold;
-}
-
-/* kolejny */
-#next {
-  position:absolute;
-  bottom:2vh;
-  width:100%;
-  font-size:5vh;
-  color:lightblue;
 }
 </style>
 
@@ -70,15 +60,13 @@ body {
 
 <body>
 
-<div id="container">
+<div id="wrap">
   <div id="name"></div>
   <div id="club"></div>
   <div id="weight"></div>
   <div id="best"></div>
   <div id="timer"></div>
 </div>
-
-<div id="next"></div>
 
 <script>
 
@@ -92,7 +80,7 @@ function update(){
   document.getElementById("name").innerText = d.name || "";
   document.getElementById("club").innerText = d.club || "";
   document.getElementById("weight").innerText = (d.weight||"")+" kg";
-  document.getElementById("best").innerText = "BEST: " + (d.best||0) + " kg";
+  document.getElementById("best").innerText = "BEST: " + (d.best||0);
 
   let time = t ? t.value : 60;
 
@@ -103,9 +91,6 @@ function update(){
   let timerEl = document.getElementById("timer");
   timerEl.innerText = time;
   timerEl.style.color = color;
-
-  document.getElementById("next").innerText =
-    d.next ? "W KOLEJCE: " + d.next : "";
 }
 
 window.addEventListener("storage", update);
