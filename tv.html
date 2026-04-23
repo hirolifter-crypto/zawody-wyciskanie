@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>TV PRO</title>
+<title>TV PRO MAX</title>
 
 <style>
 body {
@@ -11,14 +11,55 @@ body {
   text-align:center;
   font-family:Arial;
   margin:0;
+  overflow:hidden;
 }
 
-#name { font-size:12vh; color:yellow; }
-#club { font-size:5vh; }
-#weight { font-size:20vh; color:red; }
-#best { font-size:5vh; color:gold; }
-#timer { font-size:15vh; font-weight:bold; }
+/* 🔥 NAZWA – bardzo duża */
+#name {
+  font-size:16vh;
+  color:yellow;
+  font-weight:bold;
+  margin-top:2vh;
+}
+
+/* klub */
+#club {
+  font-size:6vh;
+  margin-bottom:2vh;
+}
+
+/* 🔥 CIĘŻAR – OGROMNY */
+#weight {
+  font-size:28vh;
+  color:red;
+  font-weight:bold;
+  line-height:1;
+}
+
+/* BEST */
+#best {
+  font-size:6vh;
+  color:gold;
+  margin-top:2vh;
+}
+
+/* 🔥 TIMER */
+#timer {
+  font-size:18vh;
+  font-weight:bold;
+  margin-top:2vh;
+}
+
+/* kolejny zawodnik */
+#next {
+  position:absolute;
+  bottom:2vh;
+  width:100%;
+  font-size:5vh;
+  color:lightblue;
+}
 </style>
+
 </head>
 
 <body>
@@ -28,6 +69,7 @@ body {
 <div id="weight"></div>
 <div id="best"></div>
 <div id="timer"></div>
+<div id="next"></div>
 
 <script>
 
@@ -38,21 +80,29 @@ function update(){
 
   if(!d) return;
 
+  // dane
   document.getElementById("name").innerText = d.name || "";
   document.getElementById("club").innerText = d.club || "";
-  document.getElementById("weight").innerText = (d.weight||"")+" kg";
-  document.getElementById("best").innerText = "BEST: " + (d.best||0);
+  document.getElementById("weight").innerText = (d.weight||"") + " kg";
+  document.getElementById("best").innerText = "BEST: " + (d.best || 0) + " kg";
 
+  // timer
   let time = t ? t.value : 60;
 
   let color = "white";
   if(time <= 20) color = "red";
   else if(time <= 40) color = "yellow";
 
-  document.getElementById("timer").innerText = time;
-  document.getElementById("timer").style.color = color;
+  let timerEl = document.getElementById("timer");
+  timerEl.innerText = time;
+  timerEl.style.color = color;
+
+  // kolejny
+  document.getElementById("next").innerText =
+    d.next ? "W KOLEJCE: " + d.next : "";
 }
 
+// LIVE aktualizacja
 window.addEventListener("storage", update);
 setInterval(update,200);
 
