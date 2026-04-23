@@ -9,7 +9,7 @@ body { background:#111; color:#fff; font-family:Arial; text-align:center; }
 .container { display:flex; flex-wrap:wrap; justify-content:center; }
 .group { border:1px solid #444; margin:10px; padding:10px; width:420px; }
 
-input { margin:2px; padding:5px; width:70px; }
+input { margin:2px; padding:5px; width:80px; }
 button { margin:2px; padding:6px; }
 
 .ok { background:green; }
@@ -134,7 +134,8 @@ function init(){
           group:g,
           name:"",
           club:"",
-          record:0, // 🔥 rekord ręczny
+          category:"",
+          record:0,
           attempts:[
             {w:"",ok:null},
             {w:"",ok:null},
@@ -166,6 +167,9 @@ function init(){
           <input value="${l.club}" placeholder="Klub"
           onchange="lifters[${i}].club=this.value;save();renderPlatform()">
 
+          <input value="${l.category || ''}" placeholder="Kategoria"
+          onchange="setCategory(${i},this.value)">
+
           <input value="${l.record || ''}" placeholder="Rekord"
           onchange="setRecord(${i},this.value)">
 
@@ -185,7 +189,12 @@ function init(){
   renderPlatform();
 }
 
-// ===== REKORD =====
+// ===== FUNKCJE =====
+function setCategory(i,v){
+  lifters[i].category = v;
+  save();
+}
+
 function setRecord(i,v){
   lifters[i].record = parseFloat(v) || 0;
   save();
@@ -197,6 +206,7 @@ function addLifter(group){
     group:group,
     name:"",
     club:"",
+    category:"",
     record:0,
     attempts:[
       {w:"",ok:null},
@@ -276,6 +286,7 @@ function renderPlatform(){
     <h3>GRUPA ${currentGroup+1} | PRÓBA ${currentRound+1}</h3>
     <h2>${l.name}</h2>
     <h3>${l.club}</h3>
+    <h3>${l.category || ''}</h3>
     <h1>${l.attempts[currentRound].w} kg</h1>
     <div class="best">BEST: ${best} kg</div>
     <div class="timer">${timer}s</div>
@@ -284,6 +295,7 @@ function renderPlatform(){
   localStorage.setItem("live", JSON.stringify({
     name:l.name,
     club:l.club,
+    category:l.category || "",
     weight:l.attempts[currentRound].w,
     best:best,
     attemptRecord:attemptRecord,
@@ -328,6 +340,5 @@ setTimeout(()=>{ openTV(); },1000);
 init();
 
 </script>
-
 </body>
 </html>
