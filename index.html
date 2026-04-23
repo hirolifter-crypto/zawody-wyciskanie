@@ -16,6 +16,7 @@ button { margin:2px; padding:6px; }
 .fail { background:red; }
 
 .timer { font-size:32px; }
+.best { font-size:22px; color:gold; }
 </style>
 </head>
 
@@ -61,6 +62,15 @@ function startTimer(){
     }
 
   },1000);
+}
+
+// ===== BEST =====
+function bestLift(l){
+  let vals = l.attempts
+    .filter(a => a.ok === true)
+    .map(a => parseFloat(a.w) || 0);
+
+  return vals.length ? Math.max(...vals) : 0;
 }
 
 // ===== SAVE =====
@@ -201,8 +211,9 @@ function renderPlatform(){
 
   let l = q[currentIndex];
   let next = q[currentIndex+1];
+  let best = bestLift(l);
 
-  // 🔥 KOLOR TIMERA
+  // kolor timera
   let color = "white";
   if(timer <= 20) color = "red";
   else if(timer <= 40) color = "yellow";
@@ -211,6 +222,7 @@ function renderPlatform(){
     <h2>${l.name}</h2>
     <h3>${l.club}</h3>
     <h1>${l.attempts[currentRound].w} kg</h1>
+    <div class="best">BEST: ${best} kg</div>
     <div class="timer" style="color:${color}">${timer}s</div>
   `;
 
@@ -218,7 +230,8 @@ function renderPlatform(){
     name:l.name,
     club:l.club,
     weight:l.attempts[currentRound].w,
-    next: next ? next.name : ""
+    next: next ? next.name : "",
+    best: best
   }));
 }
 
@@ -241,7 +254,7 @@ function nextMove(){
   }
 
   save();
-  startTimer(); // 🔥 start 60→0
+  startTimer();
   renderPlatform();
 }
 
