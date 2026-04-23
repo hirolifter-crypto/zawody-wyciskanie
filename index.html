@@ -43,6 +43,7 @@ button { margin:2px; padding:6px; }
 let groupSizes = [10,10,10,12];
 let lifters = [];
 
+let currentGroup = 0;   // 🔥 KLUCZOWE
 let currentIndex = 0;
 let currentRound = 0;
 
@@ -74,7 +75,7 @@ function bestLift(l){
 // ===== SAVE / LOAD =====
 function save(){
   localStorage.setItem("data", JSON.stringify({
-    lifters,currentIndex,currentRound
+    lifters,currentIndex,currentRound,currentGroup
   }));
 }
 
@@ -84,6 +85,7 @@ function load(){
     lifters = d.lifters || [];
     currentIndex = d.currentIndex || 0;
     currentRound = d.currentRound || 0;
+    currentGroup = d.currentGroup || 0;
   }
 }
 
@@ -96,7 +98,7 @@ function resetAll(){
 // ===== BACKUP =====
 function exportData(){
   let blob = new Blob([JSON.stringify({
-    lifters,currentIndex,currentRound
+    lifters,currentIndex,currentRound,currentGroup
   })],{type:"application/json"});
 
   let a = document.createElement("a");
@@ -112,6 +114,7 @@ function importData(e){
     lifters = d.lifters || [];
     currentIndex = d.currentIndex || 0;
     currentRound = d.currentRound || 0;
+    currentGroup = d.currentGroup || 0;
     save();
     location.reload();
   };
@@ -233,13 +236,19 @@ function setR(i,n,r){
   init();
 }
 
-// ===== KOLEJKA =====
+// ===== KOLEJKA (TERAZ POPRAWNA) =====
 function toNum(v){return parseFloat(v)||0;}
 
 function queue(){
   return lifters
-    .filter(l=>l.attempts[currentRound].w)
-    .sort((a,b)=>toNum(a.attempts[currentRound].w)-toNum(b.attempts[currentRound].w));
+    .filter(l =>
+      l.group === currentGroup &&
+      l.attempts[currentRound].w
+    )
+    .sort((a,b)=>
+      toNum(a.attempts[currentRound].w) -
+      toNum(b.attempts[currentRound].w)
+    );
 }
 
 // ===== PLATFORM =====
@@ -258,42 +267,47 @@ function renderPlatform(){
   let next = q[currentIndex+1];
   let best = bestLift(l);
 
-  let color = "white";
-  if(timer <= 20) color = "red";
-  else if(timer <= 40) color = "yellow";
-
   document.getElementById("platform").innerHTML = `
+    <h3>GRUPA ${currentGroup+1} | PRÓBA ${currentRound+1}</h3>
     <h2>${l.name}</h2>
     <h3>${l.club}</h3>
     <h1>${l.attempts[currentRound].w} kg</h1>
     <div class="best">BEST: ${best} kg</div>
-    <div class="timer" style="color:${color}">${timer}s</div>
+    <div class="timer">${timer}s</div>
   `;
 
   localStorage.setItem("live", JSON.stringify({
     name:l.name,
     club:l.club,
     weight:l.attempts[currentRound].w,
-    next: next ? next.name : "",
-    best: best
+    next: next ? next.name : ""
   }));
 }
 
-// ===== NEXT =====
+// ===== NEXT (NAPRAWIONE!) =====
 function nextMove(){
 
   let q = queue();
   if(!q.length) return;
 
-  if(currentIndex < q.length-1){
+  if(currentIndex < q.length - 1){
     currentIndex++;
+
   } else {
+
     if(currentRound < 2){
       currentRound++;
       currentIndex = 0;
+
     } else {
-      currentRound = 0;
-      currentIndex = 0;
+      if(currentGroup < groupSizes.length - 1){
+        currentGroup++;
+        currentRound = 0;
+        currentIndex = 0;
+      } else {
+        document.getElementById("platform").innerHTML="<h2>KONIEC ZAWODÓW</h2>";
+        return;
+      }
     }
   }
 
