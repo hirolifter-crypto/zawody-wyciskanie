@@ -54,7 +54,7 @@ body {
   font-weight:bold;
 }
 
-/* 🔥 NAPIS REKORD */
+/* NAPIS REKORD */
 #record {
   position:absolute;
   top:8%;
@@ -65,7 +65,7 @@ body {
   display:none;
 }
 
-/* 🔥 ANIMACJA */
+/* ANIMACJA */
 @keyframes pulse {
   0% { transform: scale(1); opacity:1; }
   50% { transform: scale(1.2); opacity:0.5; }
@@ -120,10 +120,9 @@ function update(){
   timerEl.innerText = time;
   timerEl.style.color = color;
 
-  // 🔥 REKORD / PRÓBA
+  // REKORD / PRÓBA
   let rec = document.getElementById("record");
 
-  // zatrzymaj poprzedni timeout
   if(recordTimeout){
     clearTimeout(recordTimeout);
   }
@@ -131,7 +130,7 @@ function update(){
   // 🔥 NOWY REKORD (zielony)
   if(d.record){
     rec.innerText = "🔥 NOWY REKORD!";
-    rec.style.color = "lime"; // ✅ ZIELONY
+    rec.style.color = "lime";
     rec.classList.add("recordOn");
 
     recordTimeout = setTimeout(()=>{
@@ -139,10 +138,10 @@ function update(){
     },10000);
   }
 
-  // 🔥 PRÓBA NA REKORD (złota)
+  // 🔥 PRÓBA NA REKORD (biała)
   else if(d.attemptRecord){
     rec.innerText = "PRÓBA NA REKORD";
-    rec.style.color = "gold";
+    rec.style.color = "white";
     rec.classList.add("recordOn");
   }
 
