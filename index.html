@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody PRO</title>
+<title>Zawody PRO FINAL</title>
 
 <style>
 body { background:#111; color:#fff; font-family:Arial; text-align:center; }
@@ -16,7 +16,9 @@ button { margin:2px; padding:6px; }
 .fail { background:red; }
 
 .timer { font-size:32px; }
-.best { font-size:22px; color:gold; }
+.best { color:gold; }
+.add { background:green; }
+.remove { background:red; }
 </style>
 </head>
 
@@ -38,29 +40,25 @@ button { margin:2px; padding:6px; }
 
 <script>
 
+let groupSizes = [10,10,10,12];
 let lifters = [];
+
 let currentIndex = 0;
 let currentRound = 0;
 
 let timer = 60;
 let interval = null;
 
-// ===== TIMER 60 → 0 =====
+// ===== TIMER =====
 function startTimer(){
   clearInterval(interval);
   timer = 60;
 
   interval = setInterval(()=>{
     timer--;
-
     localStorage.setItem("timer", JSON.stringify({value:timer}));
-
     renderPlatform();
-
-    if(timer <= 0){
-      clearInterval(interval);
-    }
-
+    if(timer <= 0) clearInterval(interval);
   },1000);
 }
 
@@ -73,7 +71,7 @@ function bestLift(l){
   return vals.length ? Math.max(...vals) : 0;
 }
 
-// ===== SAVE =====
+// ===== SAVE / LOAD =====
 function save(){
   localStorage.setItem("data", JSON.stringify({
     lifters,currentIndex,currentRound
@@ -89,6 +87,12 @@ function load(){
   }
 }
 
+// ===== RESET =====
+function resetAll(){
+  localStorage.clear();
+  location.reload();
+}
+
 // ===== BACKUP =====
 function exportData(){
   let blob = new Blob([JSON.stringify({
@@ -102,21 +106,16 @@ function exportData(){
 }
 
 function importData(e){
-  let r = new FileReader();
-  r.onload = function(){
-    let d = JSON.parse(r.result);
+  let reader = new FileReader();
+  reader.onload = function(){
+    let d = JSON.parse(reader.result);
     lifters = d.lifters || [];
     currentIndex = d.currentIndex || 0;
     currentRound = d.currentRound || 0;
     save();
     location.reload();
   };
-  r.readAsText(e.target.files[0]);
-}
-
-function resetAll(){
-  localStorage.clear();
-  location.reload();
+  reader.readAsText(e.target.files[0]);
 }
 
 // ===== INIT =====
@@ -128,36 +127,82 @@ function init(){
   c.innerHTML = "";
 
   if(lifters.length === 0){
-    for(let i=0;i<20;i++){
-      lifters.push({
-        name:"",
-        club:"",
-        attempts:[
-          {w:"",ok:null},
-          {w:"",ok:null},
-          {w:"",ok:null}
-        ]
-      });
-    }
+    groupSizes.forEach((size,g)=>{
+      for(let i=0;i<size;i++){
+        lifters.push({
+          group:g,
+          name:"",
+          club:"",
+          attempts:[
+            {w:"",ok:null},
+            {w:"",ok:null},
+            {w:"",ok:null}
+          ]
+        });
+      }
+    });
   }
 
-  lifters.forEach((l,i)=>{
-    c.innerHTML += `
-      <div class="group">
-        <input value="${l.name}" placeholder="Zawodnik"
-        onchange="lifters[${i}].name=this.value;save();renderPlatform()">
+  groupSizes.forEach((size,g)=>{
 
-        <input value="${l.club}" placeholder="Klub"
-        onchange="lifters[${i}].club=this.value;save();renderPlatform()"><br>
+    let div = document.createElement("div");
+    div.className = "group";
+    div.innerHTML = "<h3>Grupa " + (g+1) + "</h3>";
 
-        ${attemptUI(i,0)}
-        ${attemptUI(i,1)}
-        ${attemptUI(i,2)}
-      </div>
-    `;
+    lifters
+      .map((l,i)=>({l,i}))
+      .filter(x => x.l.group === g)
+      .forEach(x=>{
+
+        let l = x.l;
+        let i = x.i;
+
+        div.innerHTML += `
+          <input value="${l.name}" placeholder="Zawodnik"
+          onchange="lifters[${i}].name=this.value;save();renderPlatform()">
+
+          <input value="${l.club}" placeholder="Klub"
+          onchange="lifters[${i}].club=this.value;save();renderPlatform()">
+
+          <button class="remove" onclick="removeLifter(${i})">❌</button><br>
+
+          ${attemptUI(i,0)}
+          ${attemptUI(i,1)}
+          ${attemptUI(i,2)}
+          <br>
+        `;
+      });
+
+    div.innerHTML += `<button class="add" onclick="addLifter(${g})">➕ Dodaj</button>`;
+
+    c.appendChild(div);
   });
 
   renderPlatform();
+}
+
+// ===== DODAJ / USUŃ =====
+function addLifter(group){
+  lifters.push({
+    group:group,
+    name:"",
+    club:"",
+    attempts:[
+      {w:"",ok:null},
+      {w:"",ok:null},
+      {w:"",ok:null}
+    ]
+  });
+  save();
+  init();
+}
+
+function removeLifter(index){
+  if(confirm("Usunąć zawodnika?")){
+    lifters.splice(index,1);
+    save();
+    init();
+  }
 }
 
 // ===== PRÓBY =====
@@ -207,18 +252,17 @@ function renderPlatform(){
     return;
   }
 
-  if(currentIndex>=q.length) currentIndex=0;
+  if(currentIndex >= q.length) currentIndex = 0;
 
   let l = q[currentIndex];
   let next = q[currentIndex+1];
   let best = bestLift(l);
 
-  // kolor timera
   let color = "white";
   if(timer <= 20) color = "red";
   else if(timer <= 40) color = "yellow";
 
-  document.getElementById("platform").innerHTML=`
+  document.getElementById("platform").innerHTML = `
     <h2>${l.name}</h2>
     <h3>${l.club}</h3>
     <h1>${l.attempts[currentRound].w} kg</h1>
@@ -246,10 +290,10 @@ function nextMove(){
   } else {
     if(currentRound < 2){
       currentRound++;
-      currentIndex=0;
+      currentIndex = 0;
     } else {
-      currentRound=0;
-      currentIndex=0;
+      currentRound = 0;
+      currentIndex = 0;
     }
   }
 
