@@ -27,6 +27,9 @@ button { margin:2px; padding:6px; }
 <h1>PANEL SĘDZIOWSKI</h1>
 
 <button onclick="openTV()">📺 TV</button>
+<button onclick="exportData()">💾 ZAPISZ</button>
+<input type="file" onchange="importData(event)">
+<button onclick="resetAll()">🗑 RESET</button>
 
 <div class="container" id="groups"></div>
 
@@ -68,8 +71,58 @@ function bestLift(l){
   return vals.length ? Math.max(...vals) : 0;
 }
 
+// ===== SAVE / LOAD =====
+function save(){
+  localStorage.setItem("data", JSON.stringify({
+    lifters,currentGroup,currentIndex,currentRound
+  }));
+}
+
+function load(){
+  let d = JSON.parse(localStorage.getItem("data"));
+  if(d){
+    lifters = d.lifters || [];
+    currentGroup = d.currentGroup || 0;
+    currentIndex = d.currentIndex || 0;
+    currentRound = d.currentRound || 0;
+  }
+}
+
+// ===== BACKUP =====
+function exportData(){
+  let blob = new Blob([JSON.stringify({
+    lifters,currentGroup,currentIndex,currentRound
+  })],{type:"application/json"});
+
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "backup.json";
+  a.click();
+}
+
+function importData(e){
+  let reader = new FileReader();
+  reader.onload = function(){
+    let d = JSON.parse(reader.result);
+    lifters = d.lifters || [];
+    currentGroup = d.currentGroup || 0;
+    currentIndex = d.currentIndex || 0;
+    currentRound = d.currentRound || 0;
+    save();
+    location.reload();
+  };
+  reader.readAsText(e.target.files[0]);
+}
+
+function resetAll(){
+  localStorage.clear();
+  location.reload();
+}
+
 // ===== INIT =====
 function init(){
+
+  load();
 
   let c = document.getElementById("groups");
   c.innerHTML = "";
@@ -107,10 +160,10 @@ function init(){
 
         div.innerHTML += `
           <input value="${l.name}" placeholder="Zawodnik"
-          onchange="lifters[${i}].name=this.value;renderPlatform()">
+          onchange="lifters[${i}].name=this.value;save();renderPlatform()">
 
           <input value="${l.club}" placeholder="Klub"
-          onchange="lifters[${i}].club=this.value;renderPlatform()">
+          onchange="lifters[${i}].club=this.value;save();renderPlatform()">
 
           <button class="remove" onclick="removeLifter(${i})">❌</button><br>
 
@@ -140,11 +193,13 @@ function addLifter(group){
       {w:"",ok:null}
     ]
   });
+  save();
   init();
 }
 
 function removeLifter(i){
   lifters.splice(i,1);
+  save();
   init();
 }
 
@@ -154,10 +209,22 @@ function attemptUI(i,n){
 
   return `
     <input value="${a.w}" placeholder="${n+1}"
-    oninput="lifters[${i}].attempts[${n}].w=this.value;renderPlatform()">
-    <button onclick="lifters[${i}].attempts[${n}].ok=true">✔</button>
-    <button onclick="lifters[${i}].attempts[${n}].ok=false">❌</button>
+    oninput="setW(${i},${n},this.value)">
+    <button class="${a.ok===true?'ok':''}" onclick="setR(${i},${n},true)">✔</button>
+    <button class="${a.ok===false?'fail':''}" onclick="setR(${i},${n},false)">❌</button>
   `;
+}
+
+function setW(i,n,v){
+  lifters[i].attempts[n].w = v;
+  save();
+  renderPlatform();
+}
+
+function setR(i,n,r){
+  lifters[i].attempts[n].ok = r;
+  save();
+  init();
 }
 
 // ===== KOLEJKA =====
@@ -220,21 +287,22 @@ function nextMove(){
     }
   }
 
+  save();
   startTimer();
   renderPlatform();
 }
 
-// ===== TV AUTO =====
+// ===== TV =====
 function openTV(){
   let tv = window.open("tv.html","_blank","width=1200,height=800,left=2000,top=0");
   if(tv) tv.focus();
 }
 
-// AUTO START TV
 setTimeout(()=>{ openTV(); },1000);
 
 init();
 
 </script>
+
 </body>
 </html>
