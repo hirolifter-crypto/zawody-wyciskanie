@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody PRO FINAL</title>
+<title>Zawody PRO IPF</title>
 
 <style>
 body { background:#111; color:#fff; font-family:Arial; text-align:center; }
@@ -27,9 +27,6 @@ button { margin:2px; padding:6px; }
 <h1>PANEL SĘDZIOWSKI</h1>
 
 <button onclick="openTV()">📺 TV</button>
-<button onclick="exportData()">💾 ZAPISZ</button>
-<input type="file" onchange="importData(event)">
-<button onclick="resetAll()">🗑 RESET</button>
 
 <div class="container" id="groups"></div>
 
@@ -43,7 +40,7 @@ button { margin:2px; padding:6px; }
 let groupSizes = [10,10,10,12];
 let lifters = [];
 
-let currentGroup = 0;   // 🔥 KLUCZOWE
+let currentGroup = 0;
 let currentIndex = 0;
 let currentRound = 0;
 
@@ -68,63 +65,11 @@ function bestLift(l){
   let vals = l.attempts
     .filter(a => a.ok === true)
     .map(a => parseFloat(a.w) || 0);
-
   return vals.length ? Math.max(...vals) : 0;
-}
-
-// ===== SAVE / LOAD =====
-function save(){
-  localStorage.setItem("data", JSON.stringify({
-    lifters,currentIndex,currentRound,currentGroup
-  }));
-}
-
-function load(){
-  let d = JSON.parse(localStorage.getItem("data"));
-  if(d){
-    lifters = d.lifters || [];
-    currentIndex = d.currentIndex || 0;
-    currentRound = d.currentRound || 0;
-    currentGroup = d.currentGroup || 0;
-  }
-}
-
-// ===== RESET =====
-function resetAll(){
-  localStorage.clear();
-  location.reload();
-}
-
-// ===== BACKUP =====
-function exportData(){
-  let blob = new Blob([JSON.stringify({
-    lifters,currentIndex,currentRound,currentGroup
-  })],{type:"application/json"});
-
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "backup.json";
-  a.click();
-}
-
-function importData(e){
-  let reader = new FileReader();
-  reader.onload = function(){
-    let d = JSON.parse(reader.result);
-    lifters = d.lifters || [];
-    currentIndex = d.currentIndex || 0;
-    currentRound = d.currentRound || 0;
-    currentGroup = d.currentGroup || 0;
-    save();
-    location.reload();
-  };
-  reader.readAsText(e.target.files[0]);
 }
 
 // ===== INIT =====
 function init(){
-
-  load();
 
   let c = document.getElementById("groups");
   c.innerHTML = "";
@@ -150,7 +95,7 @@ function init(){
 
     let div = document.createElement("div");
     div.className = "group";
-    div.innerHTML = "<h3>Grupa " + (g+1) + "</h3>";
+    div.innerHTML = "<h3>Grupa "+(g+1)+"</h3>";
 
     lifters
       .map((l,i)=>({l,i}))
@@ -162,17 +107,16 @@ function init(){
 
         div.innerHTML += `
           <input value="${l.name}" placeholder="Zawodnik"
-          onchange="lifters[${i}].name=this.value;save();renderPlatform()">
+          onchange="lifters[${i}].name=this.value;renderPlatform()">
 
           <input value="${l.club}" placeholder="Klub"
-          onchange="lifters[${i}].club=this.value;save();renderPlatform()">
+          onchange="lifters[${i}].club=this.value;renderPlatform()">
 
           <button class="remove" onclick="removeLifter(${i})">❌</button><br>
 
           ${attemptUI(i,0)}
           ${attemptUI(i,1)}
-          ${attemptUI(i,2)}
-          <br>
+          ${attemptUI(i,2)}<br>
         `;
       });
 
@@ -196,16 +140,12 @@ function addLifter(group){
       {w:"",ok:null}
     ]
   });
-  save();
   init();
 }
 
-function removeLifter(index){
-  if(confirm("Usunąć zawodnika?")){
-    lifters.splice(index,1);
-    save();
-    init();
-  }
+function removeLifter(i){
+  lifters.splice(i,1);
+  init();
 }
 
 // ===== PRÓBY =====
@@ -214,41 +154,19 @@ function attemptUI(i,n){
 
   return `
     <input value="${a.w}" placeholder="${n+1}"
-    oninput="setW(${i},${n},this.value)">
-
-    <button class="${a.ok===true?'ok':''}"
-    onclick="setR(${i},${n},true)">✔</button>
-
-    <button class="${a.ok===false?'fail':''}"
-    onclick="setR(${i},${n},false)">❌</button>
+    oninput="lifters[${i}].attempts[${n}].w=this.value;renderPlatform()">
+    <button onclick="lifters[${i}].attempts[${n}].ok=true">✔</button>
+    <button onclick="lifters[${i}].attempts[${n}].ok=false">❌</button>
   `;
 }
 
-function setW(i,n,v){
-  lifters[i].attempts[n].w = v;
-  save();
-  renderPlatform();
-}
-
-function setR(i,n,r){
-  lifters[i].attempts[n].ok = r;
-  save();
-  init();
-}
-
-// ===== KOLEJKA (TERAZ POPRAWNA) =====
+// ===== KOLEJKA =====
 function toNum(v){return parseFloat(v)||0;}
 
 function queue(){
   return lifters
-    .filter(l =>
-      l.group === currentGroup &&
-      l.attempts[currentRound].w
-    )
-    .sort((a,b)=>
-      toNum(a.attempts[currentRound].w) -
-      toNum(b.attempts[currentRound].w)
-    );
+    .filter(l => l.group===currentGroup && l.attempts[currentRound].w)
+    .sort((a,b)=>toNum(a.attempts[currentRound].w)-toNum(b.attempts[currentRound].w));
 }
 
 // ===== PLATFORM =====
@@ -261,10 +179,7 @@ function renderPlatform(){
     return;
   }
 
-  if(currentIndex >= q.length) currentIndex = 0;
-
-  let l = q[currentIndex];
-  let next = q[currentIndex+1];
+  let l = q[currentIndex] || q[0];
   let best = bestLift(l);
 
   document.getElementById("platform").innerHTML = `
@@ -280,50 +195,46 @@ function renderPlatform(){
     name:l.name,
     club:l.club,
     weight:l.attempts[currentRound].w,
-    next: next ? next.name : ""
+    best:best
   }));
 }
 
-// ===== NEXT (NAPRAWIONE!) =====
+// ===== NEXT =====
 function nextMove(){
 
   let q = queue();
   if(!q.length) return;
 
-  if(currentIndex < q.length - 1){
+  if(currentIndex < q.length-1){
     currentIndex++;
-
   } else {
-
     if(currentRound < 2){
       currentRound++;
-      currentIndex = 0;
-
+      currentIndex=0;
     } else {
-      if(currentGroup < groupSizes.length - 1){
+      if(currentGroup < groupSizes.length-1){
         currentGroup++;
-        currentRound = 0;
-        currentIndex = 0;
-      } else {
-        document.getElementById("platform").innerHTML="<h2>KONIEC ZAWODÓW</h2>";
-        return;
+        currentRound=0;
+        currentIndex=0;
       }
     }
   }
 
-  save();
   startTimer();
   renderPlatform();
 }
 
-// ===== TV =====
+// ===== TV AUTO =====
 function openTV(){
-  window.open("tv.html","_blank");
+  let tv = window.open("tv.html","_blank","width=1200,height=800,left=2000,top=0");
+  if(tv) tv.focus();
 }
+
+// AUTO START TV
+setTimeout(()=>{ openTV(); },1000);
 
 init();
 
 </script>
-
 </body>
 </html>
