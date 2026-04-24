@@ -54,11 +54,11 @@ let interval = null;
 // ===== TIMER =====
 function startTimer(){
   clearInterval(interval);
-
   timer = 60;
 
   interval = setInterval(()=>{
     timer--;
+    localStorage.setItem("timer", JSON.stringify({value:timer}));
     renderPlatform();
     if(timer <= 0) clearInterval(interval);
   },1000);
@@ -93,7 +93,7 @@ function load(){
 function exportData(){
   let blob = new Blob([JSON.stringify({
     lifters,currentGroup,currentIndex,currentRound
-  })]);
+  })],{type:"application/json"});
 
   let a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -120,10 +120,15 @@ function resetAll(){
   location.reload();
 }
 
-// ===== WYCZYŚĆ PRÓBY =====
+// ===== 🔥 NOWA FUNKCJA =====
 function clearAttempts(){
-  lifters.forEach(l=>{
-    l.attempts = [{w:"",ok:null},{w:"",ok:null},{w:"",ok:null}];
+
+  lifters.forEach(l => {
+    l.attempts = [
+      {w:"", ok:null},
+      {w:"", ok:null},
+      {w:"", ok:null}
+    ];
   });
 
   currentGroup = 0;
@@ -183,10 +188,10 @@ function init(){
           onchange="lifters[${i}].club=this.value;save();renderPlatform()">
 
           <input value="${l.category || ''}" placeholder="Kategoria"
-          onchange="lifters[${i}].category=this.value;save()">
+          onchange="setCategory(${i},this.value)">
 
           <input value="${l.record || ''}" placeholder="Rekord"
-          onchange="lifters[${i}].record=parseFloat(this.value)||0;save()">
+          onchange="setRecord(${i},this.value)">
 
           <button class="remove" onclick="removeLifter(${i})">❌</button><br>
 
@@ -204,18 +209,39 @@ function init(){
   renderPlatform();
 }
 
+// ===== FUNKCJE =====
+function setCategory(i,v){
+  lifters[i].category = v;
+  save();
+}
+
+function setRecord(i,v){
+  lifters[i].record = parseFloat(v) || 0;
+  save();
+}
+
 // ===== DODAJ / USUŃ =====
 function addLifter(group){
   lifters.push({
-    group:group,name:"",club:"",category:"",record:0,
-    attempts:[{w:"",ok:null},{w:"",ok:null},{w:"",ok:null}]
+    group:group,
+    name:"",
+    club:"",
+    category:"",
+    record:0,
+    attempts:[
+      {w:"",ok:null},
+      {w:"",ok:null},
+      {w:"",ok:null}
+    ]
   });
-  save(); init();
+  save();
+  init();
 }
 
 function removeLifter(i){
   lifters.splice(i,1);
-  save(); init();
+  save();
+  init();
 }
 
 // ===== PRÓBY =====
@@ -266,6 +292,18 @@ function renderPlatform(){
 
   let best = bestLift(l);
 
+  let oldRecord = parseFloat(l.record) || 0;
+  let weight = parseFloat(l.attempts[currentRound].w) || 0;
+
+  let attemptRecord = weight > oldRecord;
+  let isRecord = false;
+
+  if(l.attempts[currentRound].ok === true){
+    if(weight > oldRecord){
+      isRecord = true;
+    }
+  }
+
   document.getElementById("platform").innerHTML = `
     <h3>GRUPA ${currentGroup+1} | PRÓBA ${currentRound+1}</h3>
 
@@ -284,6 +322,16 @@ function renderPlatform(){
     <h2>${next ? next.name : '-'}</h2>
     <h3>${next ? next.attempts[currentRound].w + ' kg' : ''}</h3>
   `;
+
+  localStorage.setItem("live", JSON.stringify({
+    name:l.name,
+    club:l.club,
+    category:l.category || "",
+    weight:l.attempts[currentRound].w,
+    best:best,
+    attemptRecord:attemptRecord,
+    record:isRecord
+  }));
 }
 
 // ===== NEXT =====
