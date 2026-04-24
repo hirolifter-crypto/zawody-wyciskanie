@@ -17,8 +17,6 @@ button { margin:2px; padding:6px; }
 
 .timer { font-size:32px; }
 .best { color:gold; }
-.add { background:green; }
-.remove { background:red; }
 </style>
 </head>
 
@@ -52,7 +50,7 @@ let currentRound = 0;
 let timer = 60;
 let interval = null;
 
-// 🔥 PRZERWA
+// PRZERWA
 let breakTime = 0;
 let breakInterval = null;
 let isBreak = false;
@@ -72,14 +70,12 @@ function startTimer(){
 
 // ===== PRZERWA =====
 function startBreak(){
-
   isBreak = true;
   breakTime = 420;
 
   clearInterval(breakInterval);
 
   breakInterval = setInterval(()=>{
-
     let min = Math.floor(breakTime/60);
     let sec = (breakTime%60).toString().padStart(2,'0');
 
@@ -89,7 +85,6 @@ function startBreak(){
       <h1>${min}:${sec}</h1>
     `;
 
-    // 🔥 WYŚLIJ NA TV
     localStorage.setItem("live", JSON.stringify({
       break:true,
       nextGroup: currentGroup+2,
@@ -136,55 +131,6 @@ function load(){
     currentIndex = d.currentIndex || 0;
     currentRound = d.currentRound || 0;
   }
-}
-
-// ===== BACKUP =====
-function exportData(){
-  let blob = new Blob([JSON.stringify({
-    lifters,currentGroup,currentIndex,currentRound
-  })],{type:"application/json"});
-
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "backup.json";
-  a.click();
-}
-
-function importData(e){
-  let reader = new FileReader();
-  reader.onload = function(){
-    let d = JSON.parse(reader.result);
-    lifters = d.lifters || [];
-    currentGroup = d.currentGroup || 0;
-    currentIndex = d.currentIndex || 0;
-    currentRound = d.currentRound || 0;
-    save();
-    location.reload();
-  };
-  reader.readAsText(e.target.files[0]);
-}
-
-function resetAll(){
-  localStorage.clear();
-  location.reload();
-}
-
-// ===== WYCZYŚĆ PRÓBY =====
-function clearAttempts(){
-  lifters.forEach(l => {
-    l.attempts = [
-      {w:"", ok:null},
-      {w:"", ok:null},
-      {w:"", ok:null}
-    ];
-  });
-
-  currentGroup = 0;
-  currentIndex = 0;
-  currentRound = 0;
-
-  save();
-  init();
 }
 
 // ===== INIT =====
@@ -241,15 +187,11 @@ function init(){
           <input value="${l.record || ''}" placeholder="Rekord"
           onchange="lifters[${i}].record=parseFloat(this.value)||0;save()">
 
-          <button onclick="removeLifter(${i})">❌</button><br>
-
           ${attemptUI(i,0)}
           ${attemptUI(i,1)}
           ${attemptUI(i,2)}<br>
         `;
       });
-
-    div.innerHTML += `<button onclick="addLifter(${g})">➕ Dodaj</button>`;
 
     c.appendChild(div);
   });
@@ -260,10 +202,11 @@ function init(){
 // ===== PRÓBY =====
 function attemptUI(i,n){
   let a = lifters[i].attempts[n];
+
   return `
     <input value="${a.w}" oninput="setW(${i},${n},this.value)">
-    <button onclick="setR(${i},${n},true)">✔</button>
-    <button onclick="setR(${i},${n},false)">❌</button>
+    <button class="${a.ok===true?'ok':''}" onclick="setR(${i},${n},true)">✔</button>
+    <button class="${a.ok===false?'fail':''}" onclick="setR(${i},${n},false)">❌</button>
   `;
 }
 
@@ -289,20 +232,22 @@ function renderPlatform(){
     return;
   }
 
-  let l = q[currentIndex] || q[0];
-  let next = q[currentIndex + 1];
+  let l = q[currentIndex];
+  let next = q[currentIndex+1];
 
   let best = bestLift(l);
 
-  // 🔥 REKORD LOGIKA
   let oldRecord = parseFloat(l.record) || 0;
   let weight = parseFloat(l.attempts[currentRound].w) || 0;
 
   let attemptRecord = weight > oldRecord;
-  let isRecord = false;
+  let isRecord = (l.attempts[currentRound].ok === true && weight > oldRecord);
 
-  if(l.attempts[currentRound].ok === true && weight > oldRecord){
-    isRecord = true;
+  let recordText = "";
+  if(isRecord){
+    recordText = "<h2 style='color:lime;'>🔥 NOWY REKORD!</h2>";
+  } else if(attemptRecord){
+    recordText = "<h3>PRÓBA NA REKORD</h3>";
   }
 
   document.getElementById("platform").innerHTML = `
@@ -310,6 +255,9 @@ function renderPlatform(){
     <h3>${l.club}</h3>
     <h3>${l.category || ''}</h3>
     <h1>${weight} kg</h1>
+
+    ${recordText}
+
     <div>BEST: ${best}</div>
     <div>${timer}s</div>
 
@@ -317,10 +265,8 @@ function renderPlatform(){
 
     <h3>NASTĘPNY:</h3>
     <h3>${next ? next.name : '-'}</h3>
-    <h4>${next ? next.attempts[currentRound].w + ' kg' : ''}</h4>
   `;
 
-  // 🔥 KLUCZOWE → TV
   localStorage.setItem("live", JSON.stringify({
     name:l.name,
     club:l.club,
@@ -359,26 +305,40 @@ function nextMove(){
   renderPlatform();
 }
 
-// ===== DODAJ / USUŃ =====
-function addLifter(group){
-  lifters.push({
-    group,name:"",club:"",category:"",record:0,
-    attempts:[{w:"",ok:null},{w:"",ok:null},{w:"",ok:null}]
+// ===== FUNKCJE =====
+function clearAttempts(){
+  lifters.forEach(l=>{
+    l.attempts = [{w:"",ok:null},{w:"",ok:null},{w:"",ok:null}];
   });
-  save(); init();
+  save();
+  init();
 }
 
-function removeLifter(i){
-  lifters.splice(i,1);
-  save(); init();
+function exportData(){
+  let blob = new Blob([JSON.stringify({lifters})]);
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download="backup.json";
+  a.click();
 }
+
+function importData(e){
+  let r = new FileReader();
+  r.onload = ()=>{
+    let d = JSON.parse(r.result);
+    lifters = d.lifters || [];
+    save();
+    location.reload();
+  };
+  r.readAsText(e.target.files[0]);
+}
+
+function resetAll(){ localStorage.clear(); location.reload(); }
 
 // ===== TV =====
-function openTV(){
-  window.open("tv.html","_blank");
-}
+function openTV(){ window.open("tv.html","_blank"); }
 
-setTimeout(()=>{ openTV(); },1000);
+setTimeout(openTV,1000);
 
 init();
 
