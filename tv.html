@@ -54,7 +54,7 @@ body {
   font-weight:bold;
 }
 
-/* NAPIS REKORD */
+/* REKORD */
 #record {
   position:absolute;
   top:8%;
@@ -103,13 +103,32 @@ function update(){
 
   if(!d) return;
 
-  // dane
+  let rec = document.getElementById("record");
+
+  // 🔥 TRYB PRZERWY
+  if(d.break){
+
+    let min = Math.floor(d.breakTime/60);
+    let sec = (d.breakTime%60).toString().padStart(2,'0');
+
+    document.getElementById("name").innerText = "PRZERWA";
+    document.getElementById("club").innerText = "";
+    document.getElementById("weight").innerText = min + ":" + sec;
+    document.getElementById("best").innerText = "KOLEJNA GRUPA: " + d.nextGroup;
+    document.getElementById("timer").innerText = "";
+
+    rec.classList.remove("recordOn");
+
+    return;
+  }
+
+  // ===== NORMALNY TRYB =====
+
   document.getElementById("name").innerText = d.name || "";
   document.getElementById("club").innerText = d.club || "";
   document.getElementById("weight").innerText = (d.weight||"")+" kg";
   document.getElementById("best").innerText = "BEST: " + (d.best||0);
 
-  // timer
   let time = t ? t.value : 60;
 
   let color = "white";
@@ -120,14 +139,11 @@ function update(){
   timerEl.innerText = time;
   timerEl.style.color = color;
 
-  // REKORD / PRÓBA
-  let rec = document.getElementById("record");
-
   if(recordTimeout){
     clearTimeout(recordTimeout);
   }
 
-  // 🔥 NOWY REKORD (zielony)
+  // 🔥 NOWY REKORD
   if(d.record){
     rec.innerText = "🔥 NOWY REKORD!";
     rec.style.color = "lime";
@@ -138,7 +154,7 @@ function update(){
     },10000);
   }
 
-  // 🔥 PRÓBA NA REKORD (biała)
+  // 🔥 PRÓBA NA REKORD
   else if(d.attemptRecord){
     rec.innerText = "PRÓBA NA REKORD";
     rec.style.color = "white";
