@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>TV PRO FINAL</title>
+<title>TV FIX</title>
 
 <style>
 body {
@@ -14,28 +14,29 @@ body {
 
   display:flex;
   justify-content:center;
-  align-items:center;
+  align-items:center; /* 🔥 środek pionowy */
   height:100vh;
 }
 
+/* 🔥 CAŁY BLOK */
 #wrap {
   text-align:center;
-  transform: translateY(5vh);
+  transform: translateY(5vh); /* 🔥 jeszcze niżej */
 }
 
-/* NAZWA */
+/* 🔥 NAZWA */
 #name {
   font-size:14vh;
   color:yellow;
   font-weight:bold;
 }
 
-/* klub */
+/* 🔥 KLUB */
 #club {
   font-size:6vh;
 }
 
-/* ciężar */
+/* 🔥 CIĘŻAR */
 #weight {
   font-size:26vh;
   color:red;
@@ -48,41 +49,16 @@ body {
   color:gold;
 }
 
-/* TIMER */
+/* 🔥 TIMER */
 #timer {
   font-size:18vh;
   font-weight:bold;
-}
-
-/* 🔥 NAPIS REKORD */
-#record {
-  position:absolute;
-  top:8%;
-  width:100%;
-  text-align:center;
-  font-size:10vh;
-  font-weight:bold;
-  display:none;
-}
-
-/* 🔥 ANIMACJA */
-@keyframes pulse {
-  0% { transform: scale(1); opacity:1; }
-  50% { transform: scale(1.2); opacity:0.5; }
-  100% { transform: scale(1); opacity:1; }
-}
-
-.recordOn {
-  display:block !important;
-  animation: pulse 1.5s infinite;
 }
 </style>
 
 </head>
 
 <body>
-
-<div id="record"></div>
 
 <div id="wrap">
   <div id="name"></div>
@@ -94,8 +70,6 @@ body {
 
 <script>
 
-let recordTimeout = null;
-
 function update(){
 
   let d = JSON.parse(localStorage.getItem("live"));
@@ -103,13 +77,11 @@ function update(){
 
   if(!d) return;
 
-  // dane
   document.getElementById("name").innerText = d.name || "";
   document.getElementById("club").innerText = d.club || "";
   document.getElementById("weight").innerText = (d.weight||"")+" kg";
   document.getElementById("best").innerText = "BEST: " + (d.best||0);
 
-  // timer
   let time = t ? t.value : 60;
 
   let color = "white";
@@ -119,39 +91,8 @@ function update(){
   let timerEl = document.getElementById("timer");
   timerEl.innerText = time;
   timerEl.style.color = color;
-
-  // 🔥 REKORD / PRÓBA
-  let rec = document.getElementById("record");
-
-  // zatrzymaj poprzedni timeout
-  if(recordTimeout){
-    clearTimeout(recordTimeout);
-  }
-
-  // 🔥 NOWY REKORD (zielony)
-  if(d.record){
-    rec.innerText = "🔥 NOWY REKORD!";
-    rec.style.color = "lime"; // ✅ ZIELONY
-    rec.classList.add("recordOn");
-
-    recordTimeout = setTimeout(()=>{
-      rec.classList.remove("recordOn");
-    },10000);
-  }
-
-  // 🔥 PRÓBA NA REKORD (złota)
-  else if(d.attemptRecord){
-    rec.innerText = "PRÓBA NA REKORD";
-    rec.style.color = "gold";
-    rec.classList.add("recordOn");
-  }
-
-  else{
-    rec.classList.remove("recordOn");
-  }
 }
 
-// LIVE
 window.addEventListener("storage", update);
 setInterval(update,200);
 
