@@ -52,7 +52,7 @@ let currentRound = 0;
 let timer = 60;
 let interval = null;
 
-// 🔥 PRZERWA
+// ===== PRZERWA =====
 let breakTime = 0;
 let breakInterval = null;
 let isBreak = false;
@@ -70,11 +70,11 @@ function startTimer(){
   },1000);
 }
 
-// ===== PRZERWA =====
+// ===== START PRZERWY =====
 function startBreak(){
 
   isBreak = true;
-  breakTime = breakTime || 420;
+  breakTime = 420;
 
   clearInterval(breakInterval);
 
@@ -89,7 +89,6 @@ function startBreak(){
       <h1>${min}:${sec}</h1>
     `;
 
-    // 📺 TV
     localStorage.setItem("live", JSON.stringify({
       break:true,
       nextGroup: currentGroup+1,
@@ -102,26 +101,35 @@ function startBreak(){
       clearInterval(breakInterval);
       isBreak = false;
       breakTime = 0;
+
+      startTimer();
       renderPlatform();
     }
 
   },1000);
 }
 
-// ===== 🔥 PRZERWA RĘCZNA =====
+// ===== 🔥 PRZERWA RĘCZNA (NAPRAWIONA) =====
 function toggleBreak(e){
 
   let btn = e.target;
 
   if(isBreak){
+    // STOP PRZERWY
     clearInterval(breakInterval);
     isBreak = false;
     breakTime = 0;
+
     btn.innerText = "⏸ PRZERWA";
+
+    // 🔥 powrót do zawodów
+    startTimer();
     renderPlatform();
+
     return;
   }
 
+  // START PRZERWY
   btn.innerText = "▶ WZNÓW";
   startBreak();
 }
@@ -245,10 +253,10 @@ function init(){
           onchange="lifters[${i}].club=this.value;save();renderPlatform()">
 
           <input value="${l.category || ''}" placeholder="Kategoria"
-          onchange="setCategory(${i},this.value)">
+          onchange="lifters[${i}].category=this.value;save()">
 
           <input value="${l.record || ''}" placeholder="Rekord"
-          onchange="setRecord(${i},this.value)">
+          onchange="lifters[${i}].record=parseFloat(this.value)||0;save()">
 
           <button class="remove" onclick="removeLifter(${i})">❌</button><br>
 
@@ -265,10 +273,6 @@ function init(){
 
   renderPlatform();
 }
-
-// ===== FUNKCJE =====
-function setCategory(i,v){ lifters[i].category = v; save(); }
-function setRecord(i,v){ lifters[i].record = parseFloat(v) || 0; save(); }
 
 // ===== DODAJ / USUŃ =====
 function addLifter(group){
