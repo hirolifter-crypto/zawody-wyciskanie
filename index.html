@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody PRO FINAL</title>
+<title>Zawody PRO FINAL STABLE</title>
 
 <style>
 body { background:#111; color:#fff; font-family:Arial; text-align:center; }
@@ -214,13 +214,20 @@ function attemptUI(i,n){
 function setW(i,n,v){ lifters[i].attempts[n].w = v; save(); renderPlatform(); }
 function setR(i,n,r){ lifters[i].attempts[n].ok = r; save(); init(); }
 
-// ===== KOLEJKA =====
-function toNum(v){return parseFloat(v)||0;}
+// ===== 🔥 KOLEJKA (NAPRAWIONA) =====
+function toNum(v){ return parseFloat(v)||0; }
 
 function queue(){
   return lifters
-    .filter(l => l.group===currentGroup && l.attempts[currentRound].w)
-    .sort((a,b)=>toNum(a.attempts[currentRound].w)-toNum(b.attempts[currentRound].w));
+    .filter(l => {
+      if(l.group !== currentGroup) return false;
+
+      let w = parseFloat(l.attempts[currentRound].w);
+      return !isNaN(w) && w > 0;
+    })
+    .sort((a,b)=>{
+      return toNum(a.attempts[currentRound].w) - toNum(b.attempts[currentRound].w);
+    });
 }
 
 // ===== PLATFORM =====
