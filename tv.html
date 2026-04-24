@@ -54,7 +54,7 @@ body {
   font-weight:bold;
 }
 
-/* REKORD */
+/* 🔥 NAPIS REKORD */
 #record {
   position:absolute;
   top:8%;
@@ -65,7 +65,7 @@ body {
   display:none;
 }
 
-/* ANIMACJA */
+/* 🔥 ANIMACJA */
 @keyframes pulse {
   0% { transform: scale(1); opacity:1; }
   50% { transform: scale(1.2); opacity:0.5; }
@@ -103,32 +103,13 @@ function update(){
 
   if(!d) return;
 
-  let rec = document.getElementById("record");
-
-  // 🔥 TRYB PRZERWY
-  if(d.break){
-
-    let min = Math.floor(d.breakTime/60);
-    let sec = (d.breakTime%60).toString().padStart(2,'0');
-
-    document.getElementById("name").innerText = "PRZERWA";
-    document.getElementById("club").innerText = "";
-    document.getElementById("weight").innerText = min + ":" + sec;
-    document.getElementById("best").innerText = "KOLEJNA GRUPA: " + d.nextGroup;
-    document.getElementById("timer").innerText = "";
-
-    rec.classList.remove("recordOn");
-
-    return;
-  }
-
-  // ===== NORMALNY TRYB =====
-
+  // dane
   document.getElementById("name").innerText = d.name || "";
   document.getElementById("club").innerText = d.club || "";
   document.getElementById("weight").innerText = (d.weight||"")+" kg";
   document.getElementById("best").innerText = "BEST: " + (d.best||0);
 
+  // timer
   let time = t ? t.value : 60;
 
   let color = "white";
@@ -139,14 +120,18 @@ function update(){
   timerEl.innerText = time;
   timerEl.style.color = color;
 
+  // 🔥 REKORD / PRÓBA
+  let rec = document.getElementById("record");
+
+  // zatrzymaj poprzedni timeout
   if(recordTimeout){
     clearTimeout(recordTimeout);
   }
 
-  // 🔥 NOWY REKORD
+  // 🔥 NOWY REKORD (zielony)
   if(d.record){
     rec.innerText = "🔥 NOWY REKORD!";
-    rec.style.color = "lime";
+    rec.style.color = "lime"; // ✅ ZIELONY
     rec.classList.add("recordOn");
 
     recordTimeout = setTimeout(()=>{
@@ -154,10 +139,10 @@ function update(){
     },10000);
   }
 
-  // 🔥 PRÓBA NA REKORD
+  // 🔥 PRÓBA NA REKORD (złota)
   else if(d.attemptRecord){
     rec.innerText = "PRÓBA NA REKORD";
-    rec.style.color = "white";
+    rec.style.color = "gold";
     rec.classList.add("recordOn");
   }
 
