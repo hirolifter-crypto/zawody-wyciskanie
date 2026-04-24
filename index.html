@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody PRO</title>
+<title>Zawody PRO FINAL</title>
 
 <style>
 body { background:#111; color:#fff; font-family:Arial; text-align:center; }
@@ -41,6 +41,7 @@ button { margin:2px; padding:6px; }
 
 <script>
 
+// ===== DANE =====
 let groupSizes = [10,10,10,12];
 let lifters = [];
 
@@ -87,6 +88,13 @@ function startBreak(){
       <h2>KOLEJNA GRUPA: ${currentGroup+2}</h2>
       <h1>${min}:${sec}</h1>
     `;
+
+    // 🔥 WYŚLIJ NA TV
+    localStorage.setItem("live", JSON.stringify({
+      break:true,
+      nextGroup: currentGroup+2,
+      breakTime: breakTime
+    }));
 
     breakTime--;
 
@@ -228,12 +236,12 @@ function init(){
           onchange="lifters[${i}].club=this.value;save();renderPlatform()">
 
           <input value="${l.category || ''}" placeholder="Kategoria"
-          onchange="setCategory(${i},this.value)">
+          onchange="lifters[${i}].category=this.value;save()">
 
           <input value="${l.record || ''}" placeholder="Rekord"
-          onchange="setRecord(${i},this.value)">
+          onchange="lifters[${i}].record=parseFloat(this.value)||0;save()">
 
-          <button class="remove" onclick="removeLifter(${i})">❌</button><br>
+          <button onclick="removeLifter(${i})">❌</button><br>
 
           ${attemptUI(i,0)}
           ${attemptUI(i,1)}
@@ -241,7 +249,7 @@ function init(){
         `;
       });
 
-    div.innerHTML += `<button class="add" onclick="addLifter(${g})">➕ Dodaj</button>`;
+    div.innerHTML += `<button onclick="addLifter(${g})">➕ Dodaj</button>`;
 
     c.appendChild(div);
   });
@@ -249,32 +257,13 @@ function init(){
   renderPlatform();
 }
 
-// ===== FUNKCJE =====
-function setCategory(i,v){ lifters[i].category = v; save(); }
-function setRecord(i,v){ lifters[i].record = parseFloat(v) || 0; save(); }
-
-// ===== DODAJ / USUŃ =====
-function addLifter(group){
-  lifters.push({
-    group:group,name:"",club:"",category:"",record:0,
-    attempts:[{w:"",ok:null},{w:"",ok:null},{w:"",ok:null}]
-  });
-  save(); init();
-}
-
-function removeLifter(i){
-  lifters.splice(i,1);
-  save(); init();
-}
-
 // ===== PRÓBY =====
 function attemptUI(i,n){
   let a = lifters[i].attempts[n];
   return `
-    <input value="${a.w}" placeholder="${n+1}"
-    oninput="setW(${i},${n},this.value)">
-    <button class="${a.ok===true?'ok':''}" onclick="setR(${i},${n},true)">✔</button>
-    <button class="${a.ok===false?'fail':''}" onclick="setR(${i},${n},false)">❌</button>
+    <input value="${a.w}" oninput="setW(${i},${n},this.value)">
+    <button onclick="setR(${i},${n},true)">✔</button>
+    <button onclick="setR(${i},${n},false)">❌</button>
   `;
 }
 
@@ -305,28 +294,41 @@ function renderPlatform(){
 
   let best = bestLift(l);
 
+  // 🔥 REKORD LOGIKA
+  let oldRecord = parseFloat(l.record) || 0;
+  let weight = parseFloat(l.attempts[currentRound].w) || 0;
+
+  let attemptRecord = weight > oldRecord;
+  let isRecord = false;
+
+  if(l.attempts[currentRound].ok === true && weight > oldRecord){
+    isRecord = true;
+  }
+
   document.getElementById("platform").innerHTML = `
-    <h3>GRUPA ${currentGroup+1} | PRÓBA ${currentRound+1}</h3>
     <h2>${l.name}</h2>
     <h3>${l.club}</h3>
     <h3>${l.category || ''}</h3>
-    <h1>${l.attempts[currentRound].w} kg</h1>
-    <div class="best">BEST: ${best} kg</div>
-    <div class="timer">${timer}s</div>
+    <h1>${weight} kg</h1>
+    <div>BEST: ${best}</div>
+    <div>${timer}s</div>
 
     <hr>
 
-    <h2 style="color:lightblue;">NASTĘPNY:</h2>
-    <h2>${next ? next.name : '-'}</h2>
-    <h3>${next ? next.attempts[currentRound].w + ' kg' : ''}</h3>
+    <h3>NASTĘPNY:</h3>
+    <h3>${next ? next.name : '-'}</h3>
+    <h4>${next ? next.attempts[currentRound].w + ' kg' : ''}</h4>
   `;
 
+  // 🔥 KLUCZOWE → TV
   localStorage.setItem("live", JSON.stringify({
     name:l.name,
     club:l.club,
     category:l.category || "",
-    weight:l.attempts[currentRound].w,
-    best:best
+    weight:weight,
+    best:best,
+    attemptRecord:attemptRecord,
+    record:isRecord
   }));
 }
 
@@ -357,10 +359,23 @@ function nextMove(){
   renderPlatform();
 }
 
+// ===== DODAJ / USUŃ =====
+function addLifter(group){
+  lifters.push({
+    group,name:"",club:"",category:"",record:0,
+    attempts:[{w:"",ok:null},{w:"",ok:null},{w:"",ok:null}]
+  });
+  save(); init();
+}
+
+function removeLifter(i){
+  lifters.splice(i,1);
+  save(); init();
+}
+
 // ===== TV =====
 function openTV(){
-  let tv = window.open("tv.html","_blank","width=1200,height=800,left=2000,top=0");
-  if(tv) tv.focus();
+  window.open("tv.html","_blank");
 }
 
 setTimeout(()=>{ openTV(); },1000);
