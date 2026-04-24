@@ -57,25 +57,37 @@ let breakTime = 0;
 let breakInterval = null;
 let isBreak = false;
 
-// ===== TIMER =====
+// ===== TIMER ZAWODNIKA =====
 function startTimer(){
+
   clearInterval(interval);
+  interval = null;
+
   timer = 60;
 
   interval = setInterval(()=>{
     timer--;
     renderPlatform();
-    if(timer <= 0) clearInterval(interval);
+
+    if(timer <= 0){
+      clearInterval(interval);
+      interval = null;
+    }
   },1000);
 }
 
 // ===== START PRZERWY =====
 function startBreak(){
 
+  // 🔥 zatrzymaj timer zawodnika
+  clearInterval(interval);
+  interval = null;
+
+  // 🔥 zatrzymaj poprzednią przerwę
+  clearInterval(breakInterval);
+
   isBreak = true;
   breakTime = 420;
-
-  clearInterval(breakInterval);
 
   breakInterval = setInterval(()=>{
 
@@ -91,45 +103,36 @@ function startBreak(){
     breakTime--;
 
     if(breakTime < 0){
-      clearInterval(breakInterval);
-      breakInterval = null;
-
-      isBreak = false;
-      breakTime = 0;
-
-      startTimer();
-      renderPlatform();
+      stopBreak();
     }
 
   },1000);
 }
 
-// ===== 🔥 PRZERWA RĘCZNA (NAPRAWIONA) =====
+// ===== STOP PRZERWY =====
+function stopBreak(){
+
+  clearInterval(breakInterval);
+  breakInterval = null;
+
+  isBreak = false;
+  breakTime = 0;
+
+  startTimer();
+  renderPlatform();
+}
+
+// ===== TOGGLE PRZERWY =====
 function toggleBreak(e){
 
   let btn = e.target;
 
   if(isBreak){
-
-    // STOP PRZERWY
-    clearInterval(breakInterval);
-    breakInterval = null;
-
-    isBreak = false;
-    breakTime = 0;
-
     btn.innerText = "⏸ PRZERWA";
-
-    // 🔥 wyczyść ekran i wróć do zawodów
-    document.getElementById("platform").innerHTML = "";
-
-    startTimer();
-    renderPlatform();
-
+    stopBreak();
     return;
   }
 
-  // START PRZERWY
   btn.innerText = "▶ WZNÓW";
   startBreak();
 }
@@ -163,7 +166,7 @@ function load(){
 function exportData(){
   let blob = new Blob([JSON.stringify({
     lifters,currentGroup,currentIndex,currentRound
-  })],{type:"application/json"});
+  })]);
 
   let a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
