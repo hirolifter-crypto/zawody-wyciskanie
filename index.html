@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody PRO IPF</title>
+<title>Zawody PRO</title>
 
 <style>
 body { background:#111; color:#fff; font-family:Arial; text-align:center; }
@@ -134,6 +134,7 @@ function init(){
           group:g,
           name:"",
           club:"",
+          record:0, // 🔥 rekord ręczny
           attempts:[
             {w:"",ok:null},
             {w:"",ok:null},
@@ -165,6 +166,9 @@ function init(){
           <input value="${l.club}" placeholder="Klub"
           onchange="lifters[${i}].club=this.value;save();renderPlatform()">
 
+          <input value="${l.record || ''}" placeholder="Rekord"
+          onchange="setRecord(${i},this.value)">
+
           <button class="remove" onclick="removeLifter(${i})">❌</button><br>
 
           ${attemptUI(i,0)}
@@ -181,12 +185,19 @@ function init(){
   renderPlatform();
 }
 
+// ===== REKORD =====
+function setRecord(i,v){
+  lifters[i].record = parseFloat(v) || 0;
+  save();
+}
+
 // ===== DODAJ / USUŃ =====
 function addLifter(group){
   lifters.push({
     group:group,
     name:"",
     club:"",
+    record:0,
     attempts:[
       {w:"",ok:null},
       {w:"",ok:null},
@@ -249,6 +260,18 @@ function renderPlatform(){
   let l = q[currentIndex] || q[0];
   let best = bestLift(l);
 
+  let oldRecord = parseFloat(l.record) || 0;
+  let weight = parseFloat(l.attempts[currentRound].w) || 0;
+
+  let attemptRecord = weight > oldRecord;
+  let isRecord = false;
+
+  if(l.attempts[currentRound].ok === true){
+    if(weight > oldRecord){
+      isRecord = true;
+    }
+  }
+
   document.getElementById("platform").innerHTML = `
     <h3>GRUPA ${currentGroup+1} | PRÓBA ${currentRound+1}</h3>
     <h2>${l.name}</h2>
@@ -262,7 +285,9 @@ function renderPlatform(){
     name:l.name,
     club:l.club,
     weight:l.attempts[currentRound].w,
-    best:best
+    best:best,
+    attemptRecord:attemptRecord,
+    record:isRecord
   }));
 }
 
