@@ -28,6 +28,7 @@ button { margin:2px; padding:6px; }
 
 <button onclick="openTV()">📺 TV</button>
 <button onclick="exportData()">💾 ZAPISZ</button>
+<button onclick="clearAttempts()">🧹 WYCZYŚĆ PRÓBY</button>
 <input type="file" onchange="importData(event)">
 <button onclick="resetAll()">🗑 RESET</button>
 
@@ -117,6 +118,25 @@ function importData(e){
 function resetAll(){
   localStorage.clear();
   location.reload();
+}
+
+// ===== 🔥 NOWA FUNKCJA =====
+function clearAttempts(){
+
+  lifters.forEach(l => {
+    l.attempts = [
+      {w:"", ok:null},
+      {w:"", ok:null},
+      {w:"", ok:null}
+    ];
+  });
+
+  currentGroup = 0;
+  currentIndex = 0;
+  currentRound = 0;
+
+  save();
+  init();
 }
 
 // ===== INIT =====
