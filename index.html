@@ -268,6 +268,8 @@ function renderPlatform(){
   }
 
   let l = q[currentIndex] || q[0];
+  let next = q[currentIndex + 1];
+
   let best = bestLift(l);
 
   let oldRecord = parseFloat(l.record) || 0;
@@ -284,12 +286,21 @@ function renderPlatform(){
 
   document.getElementById("platform").innerHTML = `
     <h3>GRUPA ${currentGroup+1} | PRÓBA ${currentRound+1}</h3>
+
     <h2>${l.name}</h2>
     <h3>${l.club}</h3>
     <h3>${l.category || ''}</h3>
+
     <h1>${l.attempts[currentRound].w} kg</h1>
+
     <div class="best">BEST: ${best} kg</div>
     <div class="timer">${timer}s</div>
+
+    <hr>
+
+    <h2 style="color:lightblue;">NASTĘPNY:</h2>
+    <h2>${next ? next.name : '-'}</h2>
+    <h3>${next ? next.attempts[currentRound].w + ' kg' : ''}</h3>
   `;
 
   localStorage.setItem("live", JSON.stringify({
