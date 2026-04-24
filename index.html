@@ -29,7 +29,6 @@ button { margin:2px; padding:6px; }
 <button onclick="openTV()">📺 TV</button>
 <button onclick="exportData()">💾 ZAPISZ</button>
 <button onclick="clearAttempts()">🧹 WYCZYŚĆ PRÓBY</button>
-<button onclick="toggleBreak(event)">⏸ PRZERWA</button>
 <input type="file" onchange="importData(event)">
 <button onclick="resetAll()">🗑 RESET</button>
 
@@ -52,89 +51,17 @@ let currentRound = 0;
 let timer = 60;
 let interval = null;
 
-// ===== PRZERWA =====
-let breakTime = 0;
-let breakInterval = null;
-let isBreak = false;
-
-// ===== TIMER ZAWODNIKA =====
+// ===== TIMER =====
 function startTimer(){
-
   clearInterval(interval);
-  interval = null;
 
   timer = 60;
 
   interval = setInterval(()=>{
     timer--;
     renderPlatform();
-
-    if(timer <= 0){
-      clearInterval(interval);
-      interval = null;
-    }
+    if(timer <= 0) clearInterval(interval);
   },1000);
-}
-
-// ===== START PRZERWY =====
-function startBreak(){
-
-  // 🔥 zatrzymaj timer zawodnika
-  clearInterval(interval);
-  interval = null;
-
-  // 🔥 zatrzymaj poprzednią przerwę
-  clearInterval(breakInterval);
-
-  isBreak = true;
-  breakTime = 420;
-
-  breakInterval = setInterval(()=>{
-
-    let min = Math.floor(breakTime/60);
-    let sec = (breakTime%60).toString().padStart(2,'0');
-
-    document.getElementById("platform").innerHTML = `
-      <h1>PRZERWA</h1>
-      <h2>KOLEJNA GRUPA: ${currentGroup+1}</h2>
-      <h1>${min}:${sec}</h1>
-    `;
-
-    breakTime--;
-
-    if(breakTime < 0){
-      stopBreak();
-    }
-
-  },1000);
-}
-
-// ===== STOP PRZERWY =====
-function stopBreak(){
-
-  clearInterval(breakInterval);
-  breakInterval = null;
-
-  isBreak = false;
-  breakTime = 0;
-
-  startTimer();
-  renderPlatform();
-}
-
-// ===== TOGGLE PRZERWY =====
-function toggleBreak(e){
-
-  let btn = e.target;
-
-  if(isBreak){
-    btn.innerText = "⏸ PRZERWA";
-    stopBreak();
-    return;
-  }
-
-  btn.innerText = "▶ WZNÓW";
-  startBreak();
 }
 
 // ===== BEST =====
@@ -327,8 +254,6 @@ function queue(){
 // ===== PLATFORM =====
 function renderPlatform(){
 
-  if(isBreak) return;
-
   let q = queue();
 
   if(!q.length){
@@ -363,8 +288,6 @@ function renderPlatform(){
 
 // ===== NEXT =====
 function nextMove(){
-
-  if(isBreak) return;
 
   let q = queue();
   if(!q.length) return;
