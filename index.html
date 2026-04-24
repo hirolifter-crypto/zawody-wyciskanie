@@ -29,6 +29,7 @@ button { margin:2px; padding:6px; }
 <button onclick="openTV()">📺 TV</button>
 <button onclick="exportData()">💾 ZAPISZ</button>
 <button onclick="clearAttempts()">🧹 WYCZYŚĆ PRÓBY</button>
+<button onclick="toggleBreak(event)">⏸ PRZERWA</button>
 <input type="file" onchange="importData(event)">
 <button onclick="resetAll()">🗑 RESET</button>
 
@@ -51,6 +52,11 @@ let currentRound = 0;
 let timer = 60;
 let interval = null;
 
+// 🔥 PRZERWA
+let breakTime = 0;
+let breakInterval = null;
+let isBreak = false;
+
 // ===== TIMER =====
 function startTimer(){
   clearInterval(interval);
@@ -62,6 +68,62 @@ function startTimer(){
     renderPlatform();
     if(timer <= 0) clearInterval(interval);
   },1000);
+}
+
+// ===== PRZERWA =====
+function startBreak(){
+
+  isBreak = true;
+  breakTime = breakTime || 420;
+
+  clearInterval(breakInterval);
+
+  breakInterval = setInterval(()=>{
+
+    let min = Math.floor(breakTime/60);
+    let sec = (breakTime%60).toString().padStart(2,'0');
+
+    document.getElementById("platform").innerHTML = `
+      <h1>PRZERWA</h1>
+      <h2>KOLEJNA GRUPA: ${currentGroup+1}</h2>
+      <h1>${min}:${sec}</h1>
+    `;
+
+    // 📺 TV
+    localStorage.setItem("live", JSON.stringify({
+      break:true,
+      nextGroup: currentGroup+1,
+      breakTime: breakTime
+    }));
+
+    breakTime--;
+
+    if(breakTime < 0){
+      clearInterval(breakInterval);
+      isBreak = false;
+      breakTime = 0;
+      renderPlatform();
+    }
+
+  },1000);
+}
+
+// ===== 🔥 PRZERWA RĘCZNA =====
+function toggleBreak(e){
+
+  let btn = e.target;
+
+  if(isBreak){
+    clearInterval(breakInterval);
+    isBreak = false;
+    breakTime = 0;
+    btn.innerText = "⏸ PRZERWA";
+    renderPlatform();
+    return;
+  }
+
+  btn.innerText = "▶ WZNÓW";
+  startBreak();
 }
 
 // ===== BEST =====
@@ -120,15 +182,10 @@ function resetAll(){
   location.reload();
 }
 
-// ===== 🔥 NOWA FUNKCJA =====
+// ===== WYCZYŚĆ PRÓBY =====
 function clearAttempts(){
-
-  lifters.forEach(l => {
-    l.attempts = [
-      {w:"", ok:null},
-      {w:"", ok:null},
-      {w:"", ok:null}
-    ];
+  lifters.forEach(l=>{
+    l.attempts = [{w:"",ok:null},{w:"",ok:null},{w:"",ok:null}];
   });
 
   currentGroup = 0;
@@ -210,38 +267,21 @@ function init(){
 }
 
 // ===== FUNKCJE =====
-function setCategory(i,v){
-  lifters[i].category = v;
-  save();
-}
-
-function setRecord(i,v){
-  lifters[i].record = parseFloat(v) || 0;
-  save();
-}
+function setCategory(i,v){ lifters[i].category = v; save(); }
+function setRecord(i,v){ lifters[i].record = parseFloat(v) || 0; save(); }
 
 // ===== DODAJ / USUŃ =====
 function addLifter(group){
   lifters.push({
-    group:group,
-    name:"",
-    club:"",
-    category:"",
-    record:0,
-    attempts:[
-      {w:"",ok:null},
-      {w:"",ok:null},
-      {w:"",ok:null}
-    ]
+    group:group,name:"",club:"",category:"",record:0,
+    attempts:[{w:"",ok:null},{w:"",ok:null},{w:"",ok:null}]
   });
-  save();
-  init();
+  save(); init();
 }
 
 function removeLifter(i){
   lifters.splice(i,1);
-  save();
-  init();
+  save(); init();
 }
 
 // ===== PRÓBY =====
@@ -280,6 +320,8 @@ function queue(){
 // ===== PLATFORM =====
 function renderPlatform(){
 
+  if(isBreak) return;
+
   let q = queue();
 
   if(!q.length){
@@ -291,18 +333,6 @@ function renderPlatform(){
   let next = q[currentIndex + 1];
 
   let best = bestLift(l);
-
-  let oldRecord = parseFloat(l.record) || 0;
-  let weight = parseFloat(l.attempts[currentRound].w) || 0;
-
-  let attemptRecord = weight > oldRecord;
-  let isRecord = false;
-
-  if(l.attempts[currentRound].ok === true){
-    if(weight > oldRecord){
-      isRecord = true;
-    }
-  }
 
   document.getElementById("platform").innerHTML = `
     <h3>GRUPA ${currentGroup+1} | PRÓBA ${currentRound+1}</h3>
@@ -322,20 +352,12 @@ function renderPlatform(){
     <h2>${next ? next.name : '-'}</h2>
     <h3>${next ? next.attempts[currentRound].w + ' kg' : ''}</h3>
   `;
-
-  localStorage.setItem("live", JSON.stringify({
-    name:l.name,
-    club:l.club,
-    category:l.category || "",
-    weight:l.attempts[currentRound].w,
-    best:best,
-    attemptRecord:attemptRecord,
-    record:isRecord
-  }));
 }
 
 // ===== NEXT =====
 function nextMove(){
+
+  if(isBreak) return;
 
   let q = queue();
   if(!q.length) return;
