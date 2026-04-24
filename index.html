@@ -64,7 +64,6 @@ function startTimer(){
 
   interval = setInterval(()=>{
     timer--;
-    localStorage.setItem("timer", JSON.stringify({value:timer}));
     renderPlatform();
     if(timer <= 0) clearInterval(interval);
   },1000);
@@ -89,16 +88,12 @@ function startBreak(){
       <h1>${min}:${sec}</h1>
     `;
 
-    localStorage.setItem("live", JSON.stringify({
-      break:true,
-      nextGroup: currentGroup+1,
-      breakTime: breakTime
-    }));
-
     breakTime--;
 
     if(breakTime < 0){
       clearInterval(breakInterval);
+      breakInterval = null;
+
       isBreak = false;
       breakTime = 0;
 
@@ -115,14 +110,19 @@ function toggleBreak(e){
   let btn = e.target;
 
   if(isBreak){
+
     // STOP PRZERWY
     clearInterval(breakInterval);
+    breakInterval = null;
+
     isBreak = false;
     breakTime = 0;
 
     btn.innerText = "⏸ PRZERWA";
 
-    // 🔥 powrót do zawodów
+    // 🔥 wyczyść ekran i wróć do zawodów
+    document.getElementById("platform").innerHTML = "";
+
     startTimer();
     renderPlatform();
 
