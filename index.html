@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Zawody PRO FINAL</title>
+<title>Zawody PRO</title>
 
 <style>
 body { background:#111; color:#fff; font-family:Arial; text-align:center; }
@@ -17,6 +17,8 @@ button { margin:2px; padding:6px; }
 
 .timer { font-size:32px; }
 .best { color:gold; }
+.add { background:green; }
+.remove { background:red; }
 </style>
 </head>
 
@@ -26,6 +28,9 @@ button { margin:2px; padding:6px; }
 
 <button onclick="openTV()">📺 TV</button>
 <button onclick="clearAttempts()">🧹 WYCZYŚĆ PRÓBY</button>
+<button onclick="exportData()">💾 ZAPISZ</button>
+<input type="file" onchange="importData(event)">
+<button onclick="resetAll()">🗑 RESET</button>
 
 <div class="container" id="groups"></div>
 
@@ -36,7 +41,6 @@ button { margin:2px; padding:6px; }
 
 <script>
 
-// ===== DANE =====
 let groupSizes = [10,10,10,12];
 let lifters = [];
 
@@ -45,30 +49,140 @@ let currentIndex = 0;
 let currentRound = 0;
 
 let timer = 60;
+let interval = null;
 
-// ===== 🔥 SYNC INPUTÓW =====
-function syncInputs(){
+// 🔥 PRZERWA
+let breakTime = 0;
+let breakInterval = null;
+let isBreak = false;
 
-  let inputs = document.querySelectorAll("input");
+// ===== TIMER =====
+function startTimer(){
+  clearInterval(interval);
+  timer = 60;
 
-  inputs.forEach((inp)=>{
-    let attr = inp.getAttribute("oninput");
+  interval = setInterval(()=>{
+    timer--;
+    localStorage.setItem("timer", JSON.stringify({value:timer}));
+    renderPlatform();
+    if(timer <= 0) clearInterval(interval);
+  },1000);
+}
 
-    if(attr && attr.includes("setW")){
-      let match = attr.match(/setW\((\d+),(\d+)/);
+// ===== PRZERWA =====
+function startBreak(){
 
-      if(match){
-        let i = parseInt(match[1]);
-        let n = parseInt(match[2]);
+  isBreak = true;
+  breakTime = 420;
 
-        lifters[i].attempts[n].w = inp.value.trim();
-      }
+  clearInterval(breakInterval);
+
+  breakInterval = setInterval(()=>{
+
+    let min = Math.floor(breakTime/60);
+    let sec = (breakTime%60).toString().padStart(2,'0');
+
+    document.getElementById("platform").innerHTML = `
+      <h1>PRZERWA</h1>
+      <h2>KOLEJNA GRUPA: ${currentGroup+2}</h2>
+      <h1>${min}:${sec}</h1>
+    `;
+
+    breakTime--;
+
+    if(breakTime < 0){
+      clearInterval(breakInterval);
+      isBreak = false;
+
+      currentGroup++;
+      currentRound = 0;
+      currentIndex = 0;
+
+      save();
+      renderPlatform();
     }
+
+  },1000);
+}
+
+// ===== BEST =====
+function bestLift(l){
+  let vals = l.attempts
+    .filter(a => a.ok === true)
+    .map(a => parseFloat(a.w) || 0);
+  return vals.length ? Math.max(...vals) : 0;
+}
+
+// ===== SAVE / LOAD =====
+function save(){
+  localStorage.setItem("data", JSON.stringify({
+    lifters,currentGroup,currentIndex,currentRound
+  }));
+}
+
+function load(){
+  let d = JSON.parse(localStorage.getItem("data"));
+  if(d){
+    lifters = d.lifters || [];
+    currentGroup = d.currentGroup || 0;
+    currentIndex = d.currentIndex || 0;
+    currentRound = d.currentRound || 0;
+  }
+}
+
+// ===== BACKUP =====
+function exportData(){
+  let blob = new Blob([JSON.stringify({
+    lifters,currentGroup,currentIndex,currentRound
+  })],{type:"application/json"});
+
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "backup.json";
+  a.click();
+}
+
+function importData(e){
+  let reader = new FileReader();
+  reader.onload = function(){
+    let d = JSON.parse(reader.result);
+    lifters = d.lifters || [];
+    currentGroup = d.currentGroup || 0;
+    currentIndex = d.currentIndex || 0;
+    currentRound = d.currentRound || 0;
+    save();
+    location.reload();
+  };
+  reader.readAsText(e.target.files[0]);
+}
+
+function resetAll(){
+  localStorage.clear();
+  location.reload();
+}
+
+// ===== WYCZYŚĆ PRÓBY =====
+function clearAttempts(){
+  lifters.forEach(l => {
+    l.attempts = [
+      {w:"", ok:null},
+      {w:"", ok:null},
+      {w:"", ok:null}
+    ];
   });
+
+  currentGroup = 0;
+  currentIndex = 0;
+  currentRound = 0;
+
+  save();
+  init();
 }
 
 // ===== INIT =====
 function init(){
+
+  load();
 
   let c = document.getElementById("groups");
   c.innerHTML = "";
@@ -108,16 +222,18 @@ function init(){
 
         div.innerHTML += `
           <input value="${l.name}" placeholder="Zawodnik"
-          onchange="lifters[${i}].name=this.value">
+          onchange="lifters[${i}].name=this.value;save();renderPlatform()">
 
           <input value="${l.club}" placeholder="Klub"
-          onchange="lifters[${i}].club=this.value">
+          onchange="lifters[${i}].club=this.value;save();renderPlatform()">
 
           <input value="${l.category || ''}" placeholder="Kategoria"
-          onchange="lifters[${i}].category=this.value">
+          onchange="setCategory(${i},this.value)">
 
           <input value="${l.record || ''}" placeholder="Rekord"
-          onchange="lifters[${i}].record=parseFloat(this.value)||0">
+          onchange="setRecord(${i},this.value)">
+
+          <button class="remove" onclick="removeLifter(${i})">❌</button><br>
 
           ${attemptUI(i,0)}
           ${attemptUI(i,1)}
@@ -125,111 +241,102 @@ function init(){
         `;
       });
 
+    div.innerHTML += `<button class="add" onclick="addLifter(${g})">➕ Dodaj</button>`;
+
     c.appendChild(div);
   });
 
   renderPlatform();
 }
 
+// ===== FUNKCJE =====
+function setCategory(i,v){ lifters[i].category = v; save(); }
+function setRecord(i,v){ lifters[i].record = parseFloat(v) || 0; save(); }
+
+// ===== DODAJ / USUŃ =====
+function addLifter(group){
+  lifters.push({
+    group:group,name:"",club:"",category:"",record:0,
+    attempts:[{w:"",ok:null},{w:"",ok:null},{w:"",ok:null}]
+  });
+  save(); init();
+}
+
+function removeLifter(i){
+  lifters.splice(i,1);
+  save(); init();
+}
+
 // ===== PRÓBY =====
 function attemptUI(i,n){
   let a = lifters[i].attempts[n];
-
   return `
-    <input value="${a.w}" oninput="setW(${i},${n},this.value)">
+    <input value="${a.w}" placeholder="${n+1}"
+    oninput="setW(${i},${n},this.value)">
     <button class="${a.ok===true?'ok':''}" onclick="setR(${i},${n},true)">✔</button>
     <button class="${a.ok===false?'fail':''}" onclick="setR(${i},${n},false)">❌</button>
   `;
 }
 
-function setW(i,n,v){
-  lifters[i].attempts[n].w = v.trim();
-}
-
-function setR(i,n,r){
-  lifters[i].attempts[n].ok = r;
-  init();
-}
+function setW(i,n,v){ lifters[i].attempts[n].w = v; save(); renderPlatform(); }
+function setR(i,n,r){ lifters[i].attempts[n].ok = r; save(); init(); }
 
 // ===== KOLEJKA =====
+function toNum(v){return parseFloat(v)||0;}
 function queue(){
   return lifters
-    .filter(l => {
-      if(l.group !== currentGroup) return false;
-      let w = parseFloat(l.attempts[currentRound].w);
-      return !isNaN(w) && w > 0;
-    })
-    .sort((a,b)=>{
-      return parseFloat(a.attempts[currentRound].w) - parseFloat(b.attempts[currentRound].w);
-    });
+    .filter(l => l.group===currentGroup && l.attempts[currentRound].w)
+    .sort((a,b)=>toNum(a.attempts[currentRound].w)-toNum(b.attempts[currentRound].w));
 }
 
 // ===== PLATFORM =====
 function renderPlatform(){
 
-  let q = queue();
+  if(isBreak) return;
 
+  let q = queue();
   if(!q.length){
-    document.getElementById("platform").innerHTML = "👉 Wpisz ciężary zawodnikom";
+    document.getElementById("platform").innerHTML="Wpisz ciężary";
     return;
   }
 
   let l = q[currentIndex] || q[0];
-  let next = q[currentIndex+1];
+  let next = q[currentIndex + 1];
 
-  let best = Math.max(...l.attempts.map(a=>a.ok?parseFloat(a.w)||0:0));
-
-  let oldRecord = parseFloat(l.record)||0;
-  let weight = parseFloat(l.attempts[currentRound].w)||0;
-
-  let attemptRecord = weight > oldRecord;
-  let isRecord = l.attempts[currentRound].ok && weight > oldRecord;
-
-  let recordText = "";
-  if(isRecord){
-    recordText = "<h2 style='color:lime;'>🔥 NOWY REKORD!</h2>";
-  } else if(attemptRecord){
-    recordText = "<h3>PRÓBA NA REKORD</h3>";
-  }
+  let best = bestLift(l);
 
   document.getElementById("platform").innerHTML = `
+    <h3>GRUPA ${currentGroup+1} | PRÓBA ${currentRound+1}</h3>
     <h2>${l.name}</h2>
     <h3>${l.club}</h3>
-    <h3>${l.category||''}</h3>
-    <h1>${weight} kg</h1>
-
-    ${recordText}
-
-    <div>BEST: ${best}</div>
+    <h3>${l.category || ''}</h3>
+    <h1>${l.attempts[currentRound].w} kg</h1>
+    <div class="best">BEST: ${best} kg</div>
+    <div class="timer">${timer}s</div>
 
     <hr>
 
-    <h3>NASTĘPNY:</h3>
-    <h3>${next ? next.name : '-'}</h3>
+    <h2 style="color:lightblue;">NASTĘPNY:</h2>
+    <h2>${next ? next.name : '-'}</h2>
+    <h3>${next ? next.attempts[currentRound].w + ' kg' : ''}</h3>
   `;
 
   localStorage.setItem("live", JSON.stringify({
     name:l.name,
     club:l.club,
-    category:l.category||"",
-    weight:weight,
-    best:best,
-    attemptRecord:attemptRecord,
-    record:isRecord
+    category:l.category || "",
+    weight:l.attempts[currentRound].w,
+    best:best
   }));
 }
 
 // ===== NEXT =====
 function nextMove(){
 
-  syncInputs(); // 🔥 KLUCZOWE
+  if(isBreak) return;
 
   let q = queue();
-
-  if(!q.length){
-    alert("Najpierw wpisz ciężary!");
-    return;
-  }
+  if(!q.length) return;
 
   if(currentIndex < q.length-1){
     currentIndex++;
@@ -237,24 +344,26 @@ function nextMove(){
     if(currentRound < 2){
       currentRound++;
       currentIndex=0;
+    } else {
+      if(currentGroup < groupSizes.length-1){
+        startBreak();
+        return;
+      }
     }
   }
 
+  save();
+  startTimer();
   renderPlatform();
-}
-
-// ===== FUNKCJE =====
-function clearAttempts(){
-  lifters.forEach(l=>{
-    l.attempts=[{w:"",ok:null},{w:"",ok:null},{w:"",ok:null}];
-  });
-  init();
 }
 
 // ===== TV =====
 function openTV(){
-  window.open("tv.html","_blank");
+  let tv = window.open("tv.html","_blank","width=1200,height=800,left=2000,top=0");
+  if(tv) tv.focus();
 }
+
+setTimeout(()=>{ openTV(); },1000);
 
 init();
 
