@@ -76,6 +76,7 @@ function startBreak(){
   clearInterval(breakInterval);
 
   breakInterval = setInterval(()=>{
+
     let min = Math.floor(breakTime/60);
     let sec = (breakTime%60).toString().padStart(2,'0');
 
@@ -215,6 +216,7 @@ function setR(i,n,r){ lifters[i].attempts[n].ok = r; save(); init(); }
 
 // ===== KOLEJKA =====
 function toNum(v){return parseFloat(v)||0;}
+
 function queue(){
   return lifters
     .filter(l => l.group===currentGroup && l.attempts[currentRound].w)
@@ -227,13 +229,14 @@ function renderPlatform(){
   if(isBreak) return;
 
   let q = queue();
+
   if(!q.length){
-    document.getElementById("platform").innerHTML="Wpisz ciężary";
+    document.getElementById("platform").innerHTML = "👉 Wpisz ciężary zawodnikom";
     return;
   }
 
-  let l = q[currentIndex];
-  let next = q[currentIndex+1];
+  let l = q[currentIndex] || q[0];
+  let next = q[currentIndex + 1];
 
   let best = bestLift(l);
 
@@ -284,7 +287,11 @@ function nextMove(){
   if(isBreak) return;
 
   let q = queue();
-  if(!q.length) return;
+
+  if(!q.length){
+    alert("Najpierw wpisz ciężary!");
+    return;
+  }
 
   if(currentIndex < q.length-1){
     currentIndex++;
