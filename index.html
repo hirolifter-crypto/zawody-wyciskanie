@@ -96,6 +96,10 @@ button{
 🗑 RESET
 </button>
 
+<button onclick="restartCompetition()">
+🔄 START OD NOWA
+</button>
+
 <div class="container" id="groups"></div>
 
 <h2>Pomost</h2>
@@ -167,6 +171,7 @@ function bestLift(l){
 function save(){
 
   localStorage.setItem(
+
     "data",
 
     JSON.stringify({
@@ -364,6 +369,23 @@ function resetAll(){
   localStorage.clear();
 
   location.reload();
+}
+
+// ===== START OD NOWA =====
+
+function restartCompetition(){
+
+  currentGroup = 0;
+
+  currentIndex = 0;
+
+  currentRound = 0;
+
+  timer = 60;
+
+  save();
+
+  renderPlatform();
 }
 
 // ===== INIT =====
@@ -651,29 +673,6 @@ function renderPlatform(){
 
   let best = bestLift(l);
 
-  let oldRecord =
-    parseFloat(l.record) || 0;
-
-  let weight =
-    parseFloat(
-      l.attempts[currentRound].w
-    ) || 0;
-
-  let attemptRecord =
-    weight > oldRecord;
-
-  let isRecord = false;
-
-  if(
-    l.attempts[currentRound].ok === true
-  ){
-
-    if(weight > oldRecord){
-
-      isRecord = true;
-    }
-  }
-
   document.getElementById("platform")
     .innerHTML = `
 
@@ -737,10 +736,6 @@ function renderPlatform(){
         l.attempts[currentRound].w,
 
       best:best,
-
-      attemptRecord:attemptRecord,
-
-      record:isRecord,
 
       currentGroup:currentGroup,
 
