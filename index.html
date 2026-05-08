@@ -5,27 +5,68 @@
 <title>Zawody PRO</title>
 
 <style>
-body { background:#111; color:#fff; font-family:Arial; text-align:center; }
-.container { display:flex; flex-wrap:wrap; justify-content:center; }
-.group { border:1px solid #444; margin:10px; padding:10px; width:420px; }
 
-input { margin:2px; padding:5px; width:80px; }
-button { margin:2px; padding:6px; }
+body{
+  background:#111;
+  color:#fff;
+  font-family:Arial;
+  text-align:center;
+}
 
-.ok { background:green; }
-.fail { background:red; }
+.container{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+}
 
-.timer { font-size:32px; }
-.best { color:gold; }
+.group{
+  border:1px solid #444;
+  margin:10px;
+  padding:10px;
+  width:420px;
+}
 
-.add { background:green; }
-.remove { background:red; }
+input{
+  margin:2px;
+  padding:5px;
+  width:80px;
+}
 
-.csv {
+button{
+  margin:2px;
+  padding:6px;
+}
+
+.ok{
+  background:green;
+}
+
+.fail{
+  background:red;
+}
+
+.timer{
+  font-size:32px;
+}
+
+.best{
+  color:gold;
+}
+
+.add{
+  background:green;
+}
+
+.remove{
+  background:red;
+}
+
+.csv{
   background:#2196f3;
   color:white;
   font-weight:bold;
 }
+
 </style>
 </head>
 
@@ -33,9 +74,17 @@ button { margin:2px; padding:6px; }
 
 <h1>PANEL SĘDZIOWSKI</h1>
 
-<button onclick="openTV()">📺 TV</button>
+<button onclick="openTV()">
+📺 TV
+</button>
 
-<button onclick="exportData()">💾 ZAPISZ JSON</button>
+<button onclick="openWarmup()">
+🏋️ ROZGRZEWKA
+</button>
+
+<button onclick="exportData()">
+💾 ZAPISZ JSON
+</button>
 
 <button class="csv" onclick="exportCSV()">
 📊 EXPORT CSV
@@ -43,18 +92,24 @@ button { margin:2px; padding:6px; }
 
 <input type="file" onchange="importData(event)">
 
-<button onclick="resetAll()">🗑 RESET</button>
+<button onclick="resetAll()">
+🗑 RESET
+</button>
 
 <div class="container" id="groups"></div>
 
 <h2>Pomost</h2>
+
 <div id="platform"></div>
 
-<button onclick="nextMove()">➡️ Następny</button>
+<button onclick="nextMove()">
+➡️ Następny
+</button>
 
 <script>
 
 let groupSizes = [10,10,10,12];
+
 let lifters = [];
 
 let currentGroup = 0;
@@ -62,9 +117,11 @@ let currentIndex = 0;
 let currentRound = 0;
 
 let timer = 60;
+
 let interval = null;
 
 // ===== TIMER =====
+
 function startTimer(){
 
   clearInterval(interval);
@@ -75,13 +132,15 @@ function startTimer(){
 
     timer--;
 
-    localStorage.setItem("timer",
+    localStorage.setItem(
+      "timer",
       JSON.stringify({value:timer})
     );
 
     renderPlatform();
 
     if(timer <= 0){
+
       clearInterval(interval);
     }
 
@@ -89,52 +148,78 @@ function startTimer(){
 }
 
 // ===== BEST =====
+
 function bestLift(l){
 
   let vals = l.attempts
+
     .filter(a => a.ok === true)
+
     .map(a => parseFloat(a.w) || 0);
 
-  return vals.length ? Math.max(...vals) : 0;
+  return vals.length
+    ? Math.max(...vals)
+    : 0;
 }
 
 // ===== SAVE =====
+
 function save(){
 
-  localStorage.setItem("data", JSON.stringify({
-    lifters,
-    currentGroup,
-    currentIndex,
-    currentRound
-  }));
+  localStorage.setItem(
+    "data",
+
+    JSON.stringify({
+
+      lifters,
+
+      currentGroup,
+
+      currentIndex,
+
+      currentRound
+    })
+  );
 }
 
 // ===== LOAD =====
+
 function load(){
 
-  let d = JSON.parse(localStorage.getItem("data"));
+  let d =
+    JSON.parse(localStorage.getItem("data"));
 
   if(d){
 
     lifters = d.lifters || [];
 
     currentGroup = d.currentGroup || 0;
+
     currentIndex = d.currentIndex || 0;
+
     currentRound = d.currentRound || 0;
   }
 }
 
 // ===== JSON EXPORT =====
+
 function exportData(){
 
   let blob = new Blob([
+
     JSON.stringify({
+
       lifters,
+
       currentGroup,
+
       currentIndex,
+
       currentRound
     })
+
   ],{
+
     type:"application/json"
   });
 
@@ -148,22 +233,35 @@ function exportData(){
 }
 
 // ===== CSV EXPORT =====
+
 function exportCSV(){
 
   let rows = [];
 
   rows.push([
+
     "Grupa",
+
     "Zawodnik",
+
     "Klub",
+
     "Kategoria",
+
     "Rekord",
+
     "1 próba",
+
     "1 wynik",
+
     "2 próba",
+
     "2 wynik",
+
     "3 próba",
+
     "3 wynik",
+
     "BEST"
   ]);
 
@@ -212,12 +310,15 @@ function exportCSV(){
   });
 
   let csv = rows
+
     .map(r =>
       r.map(v => `"${v}"`).join(";")
     )
+
     .join("\n");
 
   let blob = new Blob([csv],{
+
     type:"text/csv;charset=utf-8;"
   });
 
@@ -231,6 +332,7 @@ function exportCSV(){
 }
 
 // ===== IMPORT =====
+
 function importData(e){
 
   let reader = new FileReader();
@@ -242,7 +344,9 @@ function importData(e){
     lifters = d.lifters || [];
 
     currentGroup = d.currentGroup || 0;
+
     currentIndex = d.currentIndex || 0;
+
     currentRound = d.currentRound || 0;
 
     save();
@@ -254,6 +358,7 @@ function importData(e){
 }
 
 // ===== RESET =====
+
 function resetAll(){
 
   localStorage.clear();
@@ -262,6 +367,7 @@ function resetAll(){
 }
 
 // ===== INIT =====
+
 function init(){
 
   load();
@@ -289,8 +395,11 @@ function init(){
           record:0,
 
           attempts:[
+
             {w:"",ok:null},
+
             {w:"",ok:null},
+
             {w:"",ok:null}
           ]
         });
@@ -308,11 +417,15 @@ function init(){
       "<h3>Grupa "+(g+1)+"</h3>";
 
     lifters
+
       .map((l,i)=>({l,i}))
+
       .filter(x => x.l.group === g)
+
       .forEach(x=>{
 
         let l = x.l;
+
         let i = x.i;
 
         div.innerHTML += `
@@ -354,7 +467,9 @@ function init(){
           <br>
 
           ${attemptUI(i,0)}
+
           ${attemptUI(i,1)}
+
           ${attemptUI(i,2)}
 
           <br>
@@ -362,6 +477,7 @@ function init(){
       });
 
     div.innerHTML += `
+
       <button
       class="add"
       onclick="addLifter(${g})">
@@ -376,6 +492,7 @@ function init(){
 }
 
 // ===== CATEGORY =====
+
 function setCategory(i,v){
 
   lifters[i].category = v;
@@ -384,6 +501,7 @@ function setCategory(i,v){
 }
 
 // ===== RECORD =====
+
 function setRecord(i,v){
 
   lifters[i].record =
@@ -393,6 +511,7 @@ function setRecord(i,v){
 }
 
 // ===== ADD =====
+
 function addLifter(group){
 
   lifters.push({
@@ -408,8 +527,11 @@ function addLifter(group){
     record:0,
 
     attempts:[
+
       {w:"",ok:null},
+
       {w:"",ok:null},
+
       {w:"",ok:null}
     ]
   });
@@ -420,6 +542,7 @@ function addLifter(group){
 }
 
 // ===== REMOVE =====
+
 function removeLifter(i){
 
   lifters.splice(i,1);
@@ -430,6 +553,7 @@ function removeLifter(i){
 }
 
 // ===== ATTEMPT UI =====
+
 function attemptUI(i,n){
 
   let a = lifters[i].attempts[n];
@@ -456,6 +580,7 @@ function attemptUI(i,n){
 }
 
 // ===== SET WEIGHT =====
+
 function setW(i,n,v){
 
   lifters[i].attempts[n].w = v;
@@ -466,6 +591,7 @@ function setW(i,n,v){
 }
 
 // ===== SET RESULT =====
+
 function setR(i,n,r){
 
   lifters[i].attempts[n].ok = r;
@@ -476,30 +602,37 @@ function setR(i,n,r){
 }
 
 // ===== NUMBER =====
+
 function toNum(v){
 
   return parseFloat(v) || 0;
 }
 
 // ===== QUEUE =====
+
 function queue(){
 
   return lifters
 
     .filter(l =>
+
       l.group===currentGroup &&
+
       l.attempts[currentRound].w
     )
 
     .sort((a,b)=>
 
       toNum(a.attempts[currentRound].w)
+
       -
+
       toNum(b.attempts[currentRound].w)
     );
 }
 
 // ===== PLATFORM =====
+
 function renderPlatform(){
 
   let q = queue();
@@ -514,15 +647,40 @@ function renderPlatform(){
 
   let l = q[currentIndex] || q[0];
 
+  let next = q[currentIndex + 1];
+
   let best = bestLift(l);
+
+  let oldRecord =
+    parseFloat(l.record) || 0;
+
+  let weight =
+    parseFloat(
+      l.attempts[currentRound].w
+    ) || 0;
+
+  let attemptRecord =
+    weight > oldRecord;
+
+  let isRecord = false;
+
+  if(
+    l.attempts[currentRound].ok === true
+  ){
+
+    if(weight > oldRecord){
+
+      isRecord = true;
+    }
+  }
 
   document.getElementById("platform")
     .innerHTML = `
 
     <h3>
-    GRUPA ${currentGroup+1}
-    |
-    PRÓBA ${currentRound+1}
+      GRUPA ${currentGroup+1}
+      |
+      PRÓBA ${currentRound+1}
     </h3>
 
     <h2>${l.name}</h2>
@@ -532,19 +690,41 @@ function renderPlatform(){
     <h3>${l.category || ''}</h3>
 
     <h1>
-    ${l.attempts[currentRound].w} kg
+      ${l.attempts[currentRound].w} kg
     </h1>
 
     <div class="best">
-    BEST: ${best} kg
+      BEST: ${best} kg
     </div>
 
     <div class="timer">
-    ${timer}s
+      ${timer}s
     </div>
+
+    <hr>
+
+    <h2 style="color:lightblue;">
+      NASTĘPNY:
+    </h2>
+
+    <h2>
+      ${next ? next.name : '-'}
+    </h2>
+
+    <h3>
+      ${
+        next
+        ? next.attempts[currentRound].w
+          + ' kg'
+        : ''
+      }
+    </h3>
   `;
 
-  localStorage.setItem("live",
+  localStorage.setItem(
+
+    "live",
+
     JSON.stringify({
 
       name:l.name,
@@ -553,14 +733,28 @@ function renderPlatform(){
 
       category:l.category || "",
 
-      weight:l.attempts[currentRound].w,
+      weight:
+        l.attempts[currentRound].w,
 
-      best:best
+      best:best,
+
+      attemptRecord:attemptRecord,
+
+      record:isRecord,
+
+      currentGroup:currentGroup,
+
+      currentRound:currentRound,
+
+      currentIndex:currentIndex,
+
+      queue:q
     })
   );
 }
 
 // ===== NEXT =====
+
 function nextMove(){
 
   let q = queue();
@@ -576,6 +770,7 @@ function nextMove(){
     if(currentRound < 2){
 
       currentRound++;
+
       currentIndex=0;
 
     } else {
@@ -583,7 +778,9 @@ function nextMove(){
       if(currentGroup < groupSizes.length-1){
 
         currentGroup++;
+
         currentRound=0;
+
         currentIndex=0;
       }
     }
@@ -597,19 +794,41 @@ function nextMove(){
 }
 
 // ===== TV =====
+
 function openTV(){
 
   let tv = window.open(
+
     "tv.html",
+
     "_blank",
+
     "width=1200,height=800,left=2000,top=0"
   );
 
   if(tv) tv.focus();
 }
 
+// ===== WARMUP =====
+
+function openWarmup(){
+
+  let warmup = window.open(
+
+    "warmup.html",
+
+    "_blank",
+
+    "width=1400,height=900,left=100,top=0"
+  );
+
+  if(warmup) warmup.focus();
+}
+
 setTimeout(()=>{
+
   openTV();
+
 },1000);
 
 init();
